@@ -14,60 +14,57 @@ function plans(option: string) {
     <>
       <Plan
         name="Starter"
-        price={option === 'Monthly' ? '$12' : '$120'}
-        period={option === 'Monthly' ? '/month' : '/year'}
-        subheadline={<p>Small teams getting started with shared inboxes</p>}
+        price={option === 'Monthly' ? 'Free' : 'Free'}
+        period={option === 'Monthly' ? '' : ''}
+        subheadline={<p>Small teams trying out knowledge paths</p>}
         features={[
-          'Shared inbox for up to 2 mailboxes',
-          'Tagging & assignment',
-          'Private notes',
-          'Automatic replies',
+          'File uploads (PDF, Word, Markdown)',
+          'Learning path generation',
+          'Source links and verification',
+          'Up to 3 users',
           'Email support',
         ]}
         cta={
           <SoftButtonLink href="#" size="lg">
-            Start free trial
+            Get started
           </SoftButtonLink>
         }
       />
       <Plan
         name="Growth"
-        price={option === 'Monthly' ? '$49' : '$490'}
-        period={option === 'Monthly' ? '/month' : '/year'}
-        subheadline={<p>Growing teams needing collaboration and insights</p>}
+        price={option === 'Monthly' ? 'TBD' : 'TBD'}
+        period={option === 'Monthly' ? '/mo' : '/yr'}
+        subheadline={<p>Teams with multiple docs and connectors</p>}
         badge="Most popular"
         features={[
           'Everything in Starter',
-          'Inbox Agent',
-          'Unlimited mailboxes',
-          'Collision detection',
-          'Snippets and templates',
-          'Reporting dashboard',
-          'Slack integration',
+          'Google Drive connector',
+          'Confluence connector',
+          'More users and documents',
+          'Path library and sharing',
+          'Priority support',
         ]}
         cta={
           <ButtonLink href="#" size="lg">
-            Start free trial
+            Get started
           </ButtonLink>
         }
       />
       <Plan
-        name="Pro"
-        price={option === 'Monthly' ? '$299' : '$2990'}
-        period={option === 'Monthly' ? '/month' : '/year'}
-        subheadline={<p>Support-focused organizations and larger teams</p>}
+        name="Enterprise"
+        price="Contact"
+        period=""
+        subheadline={<p>Larger organizations and regulated environments</p>}
         features={[
           'Everything in Growth',
-          'Custom roles & permissions',
-          'Automation engine',
-          'API access',
-          'SLA tracking',
-          'SSO support',
-          'SOC 2 compliance',
+          'SSO and custom roles',
+          'Dedicated support',
+          'SLA and compliance',
+          'On-prem or private cloud options',
         ]}
         cta={
           <SoftButtonLink href="#" size="lg">
-            Start free trial
+            Contact sales
           </SoftButtonLink>
         }
       />
@@ -84,8 +81,8 @@ export default function Page() {
         headline="Pricing"
         subheadline={
           <p>
-            Simplify your shared inbox, collaborate effortlessly, and give every customer a reply that feels personal,
-            even if it was written by a bot.
+            Turn your docs into guided learning paths. Choose a plan that fits your team size and how many sources you
+            want to connect.
           </p>
         }
         options={['Monthly', 'Yearly']}
@@ -194,75 +191,51 @@ export default function Page() {
       {/* Plan Comparison Table */}
       <PlanComparisonTable
         id="pricing"
-        plans={['Starter', 'Growth', 'Pro']}
+        plans={['Starter', 'Growth', 'Enterprise']}
         features={[
           {
-            title: 'Collaboration',
+            title: 'Knowledge base',
             features: [
+              { name: 'File uploads (PDF, Word, MD)', value: true },
               {
-                name: 'Shared inboxes',
-                value: { Starter: '2', Growth: 'Unlimited', Pro: 'Unlimited' },
-              },
-              { name: 'Private notes', value: true },
-              { name: 'Tagging & assignment', value: true },
-              {
-                name: 'Collision detection',
-                value: { Starter: false, Growth: true, Pro: true },
+                name: 'Google Drive connector',
+                value: { Starter: false, Growth: true, Enterprise: true },
               },
               {
-                name: 'Real-time activity indicators',
-                value: { Starter: false, Growth: true, Pro: true },
+                name: 'Confluence connector',
+                value: { Starter: false, Growth: true, Enterprise: true },
               },
               {
-                name: 'Internal chat',
-                value: { Starter: false, Growth: true, Pro: true },
+                name: 'Document limit',
+                value: { Starter: 'Limited', Growth: 'Higher', Enterprise: 'Unlimited' },
               },
             ],
           },
           {
-            title: 'Automation',
+            title: 'Paths & verification',
             features: [
-              { name: 'Automatic replies', value: true },
+              { name: 'Learning path generation', value: true },
+              { name: 'Source links and verification', value: true },
               {
-                name: 'Inbox Agent',
-                value: { Starter: false, Growth: true, Pro: true },
-              },
-              {
-                name: 'Automation engine',
-                value: { Starter: false, Growth: true, Pro: true },
-              },
-              {
-                name: 'Snippets and templates',
-                value: { Starter: false, Growth: true, Pro: true },
-              },
-              {
-                name: 'SLA tracking',
-                value: { Starter: false, Growth: false, Pro: true },
+                name: 'Path library and sharing',
+                value: { Starter: false, Growth: true, Enterprise: true },
               },
             ],
           },
           {
-            title: 'Team Management',
+            title: 'Team & security',
             features: [
               {
-                name: 'Unlimited users',
-                value: { Starter: 'Up to 5', Growth: true, Pro: true },
+                name: 'Users',
+                value: { Starter: 'Up to 3', Growth: 'More', Enterprise: 'Unlimited' },
               },
               {
-                name: 'Reporting dashboard',
-                value: { Starter: false, Growth: true, Pro: true },
+                name: 'SSO and custom roles',
+                value: { Starter: false, Growth: false, Enterprise: true },
               },
               {
-                name: 'Slack integration',
-                value: { Starter: false, Growth: true, Pro: true },
-              },
-              {
-                name: 'Roles & permissions',
-                value: { Starter: false, Growth: false, Pro: true },
-              },
-              {
-                name: 'SSO support',
-                value: { Starter: false, Growth: false, Pro: true },
+                name: 'SLA and compliance',
+                value: { Starter: false, Growth: false, Enterprise: true },
               },
             ],
           },
@@ -271,12 +244,12 @@ export default function Page() {
             features: [
               { name: 'Email support', value: true },
               {
-                name: 'Priority response',
-                value: { Starter: false, Growth: true, Pro: true },
+                name: 'Priority support',
+                value: { Starter: false, Growth: true, Enterprise: true },
               },
               {
-                name: 'Dedicated manager',
-                value: { Starter: false, Growth: false, Pro: true },
+                name: 'Dedicated support',
+                value: { Starter: false, Growth: false, Enterprise: true },
               },
             ],
           },
@@ -287,8 +260,8 @@ export default function Page() {
         id="testimonial"
         quote={
           <p>
-            Ever since we started using Oatmeal, our customer satisfaction scores have skyrocketed. The personal touch
-            that their human-AI hybrid support provides is unparalleled.
+            We connected our docs and Drive, and now we generate onboarding and process paths in minutes. New joiners
+            get clear steps with links to the source — no more hunting through wikis.
           </p>
         }
         img={
@@ -301,42 +274,42 @@ export default function Page() {
           />
         }
         name="Lynn Marshall"
-        byline="Founder at Pine Labs"
+        byline="Engineering lead"
       />
       {/* FAQs */}
       <FAQsAccordion id="faqs" headline="Questions & Answers">
         <Faq
           id="faq-1"
-          question="Do I need a credit card to start the free trial?"
-          answer="Yes, but don't worry, you won't be charged until the trial period is over. We won't send you an email reminding you when this happens because we are really hoping you'll forget and we can keep charging you until your cards expires"
+          question="What sources can I connect?"
+          answer="You can upload files (PDF, Word, Markdown, text) and connect Google Drive and Confluence. We only use content you provide — no generic web data."
         />
         <Faq
           id="faq-2"
-          question="Can my whole team use the same inbox?"
-          answer="Yes, the more the merrier! Oatmeal works best when your entire company has access. We will charge you per additional seat, but we won't tell you about this until you get your invoice."
+          question="What counts as a user?"
+          answer="Anyone who signs in to your team's workspace and can create or view learning paths. Starter is limited to a few users; Growth and Enterprise scale up."
         />
         <Faq
           id="faq-3"
-          question="Is the AI agent actually a bunch of people in India?"
-          answer="Not just India! We have people in lots of countries around the world pretending to be an AI, including some that are currently under sanctions, so we can't legally mention them here."
+          question="Can I try before paying?"
+          answer="Yes. The Starter plan is free so you can upload docs, generate paths, and see how verification and source links work before upgrading."
         />
         <Faq
           id="faq-4"
-          question="Does Oatmeal replace my email client?"
-          answer="Absolutely. The idea is that we transition you away from email entirely, so you become completely dependent on our service. Like a parasite living off a host."
+          question="Do you replace my existing tools?"
+          answer="No. We work on top of Google Drive and Confluence. You keep using them; we index and weave the content into guided paths."
         />
       </FAQsAccordion>
       {/* Call To Action */}
       <CallToActionSimpleCentered
         id="call-to-action"
-        headline="Have anymore questions?"
+        headline="Have questions?"
         subheadline={
-          <p>Chat to someone on our sales team, who will make promises about our roadmap that we won't keep.</p>
+          <p>Get in touch to find the right plan for your team or to see a demo.</p>
         }
         cta={
           <div className="flex items-center gap-4">
             <ButtonLink href="#" size="lg">
-              Chat with us
+              Get started
             </ButtonLink>
 
             <PlainButtonLink href="#" size="lg">

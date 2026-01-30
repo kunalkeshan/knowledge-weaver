@@ -14,11 +14,12 @@ export default function Page() {
       {/* Hero */}
       <HeroLeftAlignedWithPhoto
         id="hero"
-        headline="Your customer success is our mission."
+        headline="Turn scattered knowledge into paths that work."
         subheadline={
           <p>
-            We're on a mission to take the human element completely out of customer support — so your team can focus on
-            what matters most, profitability.
+            Community Knowledge Weaver helps teams stop drowning in docs. We connect your files, Drive, and Confluence,
+            then weave them into step-by-step learning paths and guides — so onboarding and how-tos stay clear and
+            grounded in your content.
           </p>
         }
         photo={
@@ -34,26 +35,26 @@ export default function Page() {
       {/* Stats */}
       <StatsWithGraph
         id="stats"
-        eyebrow="Built for scale"
-        headline="The inbox powering customer conversations everywhere."
+        eyebrow="Built for teams"
+        headline="One knowledge base. Guided paths. Verified answers."
         subheadline={
           <p>
-            Oatmeal helps teams deliver personal, organized, and fast customer support across the world. From small
-            startups to enterprise teams, we process millions of messages each month — using a massive network of low
-            wage workers stationed around the globe.
+            We built Community Knowledge Weaver for teams with growing docs and slow onboarding. Upload files, connect
+            Google Drive and Confluence, and get learning paths, process guides, and troubleshooting — all tied back to
+            your sources.
           </p>
         }
       >
-        <Stat stat="2M+" text="Emails manually processed every week across thousands of teams." />
-        <Stat stat="99.98%" text="Uptime — because your customers never stop complaining." />
+        <Stat stat="Your content" text="We only use what you connect — no generic web answers." />
+        <Stat stat="Verified" text="Paths are checked against your docs with confidence and source links." />
       </StatsWithGraph>
       {/* Testimonial */}
       <TestimonialTwoColumnWithLargePhoto
         id="testimonial"
         quote={
           <p>
-            Ever since we started using Oatmeal, our customer satisfaction scores have skyrocketed. The personal touch
-            that their human-AI hybrid support provides is unparalleled.
+            We went from weeks of ad-hoc onboarding to clear, role-specific paths in minutes. Everything links back to
+            our docs, so new joiners know exactly where to look.
           </p>
         }
         img={
@@ -66,16 +67,16 @@ export default function Page() {
           />
         }
         name="Lynn Marshall"
-        byline="Founder at Pine Labs"
+        byline="Engineering lead"
       />
       {/* Team */}
       <TeamFourColumnGrid
         id="team"
-        headline="Our leadership team"
+        headline="Our team"
         subheadline={
           <p>
-            Oatmeals's leadership team combines decades of experience in private equity, where they honed their skills
-            in cost-cutting and maximizing shareholder value.
+            We're a small team focused on making organizational knowledge actionable — so teams spend less time
+            searching and more time doing.
           </p>
         }
       >
@@ -187,14 +188,14 @@ export default function Page() {
       {/* Call To Action */}
       <CallToActionSimple
         id="call-to-action"
-        headline="Have anymore questions?"
+        headline="Have questions?"
         subheadline={
-          <p>Chat to someone on our sales team, who will make promises about our roadmap that we won't keep.</p>
+          <p>Get in touch to see how Community Knowledge Weaver can work for your team.</p>
         }
         cta={
           <div className="flex items-center gap-4">
             <ButtonLink href="#" size="lg">
-              Chat with us
+              Get started
             </ButtonLink>
 
             <PlainButtonLink href="#" size="lg">

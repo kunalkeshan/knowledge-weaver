@@ -7,11 +7,11 @@ export default function Page() {
     <>
       <DocumentCentered id="document" headline="Privacy Policy" subheadline={<p>Last updated on December 19, 2025.</p>}>
         <p>
-          Company Inc. ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>
-          ," or "<strong>our</strong>") respects your privacy and is committed to protecting your personal information.
-          This Privacy Policy describes, in general terms, how we collect, use, store, and protect information when you
-          interact with our websites, products, or services (collectively, the "<strong>Services</strong>"). This policy
-          is provided for informational purposes and is intended to be a general example only.
+          Community Knowledge Weaver ("<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>")
+          respects your privacy and is committed to protecting your personal information. This Privacy Policy describes,
+          in general terms, how we collect, use, store, and protect information when you interact with our websites,
+          products, or services (collectively, the "<strong>Services</strong>"). This policy is provided for
+          informational purposes and is intended to be a general example only.
         </p>
         <h2>Information We Collect and How We Use It</h2>
         <p>
@@ -60,11 +60,11 @@ export default function Page() {
         </p>
         <p>If you have any questions about this Privacy Policy, please contact us at:</p>
         <p>
-          <strong>Company Inc.</strong>
+          <strong>Community Knowledge Weaver</strong>
           <br />
-          Email: <Link href="mailto:privacy@company.example">privacy@company.example</Link>
+          Email: <Link href="mailto:privacy@example.com">privacy@example.com</Link>
           <br />
-          Address: 123 Demo Street, Example City, Country
+          Address: [Your contact address]
         </p>
       </DocumentCentered>
     </>

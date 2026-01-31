@@ -15,39 +15,43 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 
-// This is sample data.
-const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
+const calendars = [
+  {
+    name: 'My Calendars',
+    items: ['Personal', 'Work', 'Family'],
   },
-  calendars: [
-    {
-      name: 'My Calendars',
-      items: ['Personal', 'Work', 'Family'],
-    },
-    {
-      name: 'Favorites',
-      items: ['Holidays', 'Birthdays'],
-    },
-    {
-      name: 'Other',
-      items: ['Travel', 'Reminders', 'Deadlines'],
-    },
-  ],
+  {
+    name: 'Favorites',
+    items: ['Holidays', 'Birthdays'],
+  },
+  {
+    name: 'Other',
+    items: ['Travel', 'Reminders', 'Deadlines'],
+  },
+]
+
+interface SidebarRightProps extends React.ComponentProps<typeof Sidebar> {
+  user: {
+    name: string
+    email: string
+    image?: string | null
+  }
 }
 
-export function SidebarRight({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function SidebarRight({ user, ...props }: SidebarRightProps) {
   return (
-    <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l lg:flex" {...props}>
+    <Sidebar
+      collapsible="none"
+      className="sticky top-0 hidden h-svh border-l lg:flex"
+      {...props}
+    >
       <SidebarHeader className="h-16 border-b border-sidebar-border">
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarHeader>
       <SidebarContent>
         <DatePicker />
         <SidebarSeparator className="mx-0" />
-        <Calendars calendars={data.calendars} />
+        <Calendars calendars={calendars} />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

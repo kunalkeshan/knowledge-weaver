@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { SignInPage } from '@/components/auth/sign-in-page'
+import { SignUpPage } from '@/components/auth/sign-up-page'
 
 export default async function Page() {
   const session = await auth.api.getSession({
@@ -12,5 +12,5 @@ export default async function Page() {
     redirect('/dashboard')
   }
 
-  return <SignInPage />
+  return <SignUpPage />
 }

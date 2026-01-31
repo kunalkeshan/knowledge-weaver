@@ -1,97 +1,16 @@
-import { SidebarLeft } from '@/components/dashboard/sidebar-left'
-import { SidebarRight } from '@/components/dashboard/sidebar-right'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb'
-import { Separator } from '@/components/ui/separator'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { BookOpen, FileStack, Sparkles } from 'lucide-react'
-import Link from 'next/link'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { DashboardContent } from '@/components/dashboard/dashboard-content'
 
-export default function Page() {
-  return (
-    <SidebarProvider>
-      <SidebarLeft />
-      <SidebarInset>
-        <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background">
-          <div className="flex flex-1 items-center gap-2 px-3">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="line-clamp-1">Dashboard</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-6 p-6">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Community Knowledge Weaver
-            </h1>
-            <p className="text-muted-foreground">
-              Turn scattered docs, forums, and wikis into actionable learning paths and guided workflows with agentic AI.
-            </p>
-          </div>
+export default async function Page() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
 
-          <div className="grid gap-4 rounded-lg border bg-muted/30 p-4 md:grid-cols-3">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Documents indexed</p>
-              <p className="text-2xl font-semibold">—</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Last sync</p>
-              <p className="text-2xl font-semibold">—</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Recent learning paths</p>
-              <p className="text-2xl font-semibold">—</p>
-            </div>
-          </div>
+  if (!session?.user) {
+    redirect('/login')
+  }
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Link
-              href="/dashboard/knowledge-base"
-              className="group flex flex-col gap-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <FileStack className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold">Build knowledge base</h2>
-                <p className="text-sm text-muted-foreground">
-                  Upload documents, connect Google Drive or Confluence, and index your organizational knowledge.
-                </p>
-              </div>
-            </Link>
-            <Link
-              href="/dashboard/workflows"
-              className="group flex flex-col gap-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold">Generate a learning path</h2>
-                <p className="text-sm text-muted-foreground">
-                  Describe what you want to learn or solve. Get structured paths for onboarding, process guides, or troubleshooting.
-                </p>
-              </div>
-            </Link>
-          </div>
-
-          <div className="rounded-xl border bg-muted/30 p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-              <BookOpen className="h-4 w-4" />
-              Recent learning paths
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Your generated paths will appear here. Try generating a path from workflows to get started.
-            </p>
-          </div>
-        </div>
-      </SidebarInset>
-      <SidebarRight />
-    </SidebarProvider>
-  )
+  return <DashboardContent user={session.user} />
 }

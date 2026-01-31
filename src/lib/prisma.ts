@@ -2,7 +2,7 @@
 // without the global attachment which is more suitable for server environments
 
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '../generated/prisma/client'
+import { PrismaClient } from '../../generated/prisma/client'
 
 let prismaInstance: PrismaClient | undefined
 

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '../../node_modules/tw-animate-css/dist/tw-animate.css';
-@import "tw-animate-css";
+@import 'tw-animate-css';
+@plugin '@tailwindcss/typography';
 
 @custom-variant dark (&.dark, .dark &);
 
@@ -156,4 +157,37 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Thinking indicator animation for chat */
+@keyframes thinking-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.thinking-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  @apply bg-muted-foreground;
+  opacity: 0.6;
+  animation: thinking-bounce 1.4s ease-in-out infinite;
+}
+
+.thinking-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.thinking-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.thinking-dot:nth-child(3) {
+  animation-delay: 0.4s;
 }

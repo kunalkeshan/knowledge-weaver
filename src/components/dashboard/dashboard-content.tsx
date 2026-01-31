@@ -1,3 +1,4 @@
+import { AgentGrid } from '@/components/agents/agent-grid'
 import { SidebarLeft } from '@/components/dashboard/sidebar-left'
 import { SidebarRight } from '@/components/dashboard/sidebar-right'
 import {
@@ -12,7 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { BookOpen, FileStack, Sparkles } from 'lucide-react'
+import { Bot, BookOpen, FileStack, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 interface DashboardContentProps {
@@ -112,6 +113,14 @@ export function DashboardContent({ user }: DashboardContentProps) {
                 </p>
               </div>
             </Link>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="flex items-center gap-2 text-sm font-semibold">
+              <Bot className="h-4 w-4" />
+              AI Agents
+            </h3>
+            <AgentGrid />
           </div>
 
           <div className="rounded-xl border bg-muted/30 p-4">

@@ -1,4 +1,5 @@
 import { Main } from '@/components/elements/main'
+import { QueryProvider } from '@/providers/query-provider'
 import type { Metadata } from 'next'
 import './globals.css'
 
@@ -27,7 +28,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Main>{children}</Main>
+        <QueryProvider>
+          <Main>{children}</Main>
+        </QueryProvider>
       </body>
     </html>
   )

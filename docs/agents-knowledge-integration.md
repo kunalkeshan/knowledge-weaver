@@ -10,11 +10,11 @@
 
 ### Summary
 
-| What | Where | How |
-|------|--------|-----|
-| Agent ↔ KB link | Watson (agent’s `knowledge_base` array) | Set at creation (seed); can be updated later via PATCH agent. |
-| Which content goes into which KB | App: `src/lib/sync-to-watson.ts` → `AGENT_SYNC_MAP` | By agent **display name** (e.g. "Onboarding Assistant"). |
-| Pushing content into KBs | "Sync to Watson" (Tracking page) | For each agent in the map, build text from DB (projects/tickets/notes/policies), delete old `sync-db-*` docs, upload new doc to that agent’s first KB. |
+| What                             | Where                                               | How                                                                                                                                                    |
+| -------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Agent ↔ KB link                  | Watson (agent’s `knowledge_base` array)             | Set at creation (seed); can be updated later via PATCH agent.                                                                                          |
+| Which content goes into which KB | App: `src/lib/sync-to-watson.ts` → `AGENT_SYNC_MAP` | By agent **display name** (e.g. "Onboarding Assistant").                                                                                               |
+| Pushing content into KBs         | "Sync to Watson" (Tracking page)                    | For each agent in the map, build text from DB (projects/tickets/notes/policies), delete old `sync-db-*` docs, upload new doc to that agent’s first KB. |
 
 So: **each agent is connected to one KB**. What that KB contains is decided by **AGENT_SYNC_MAP** (which entity types and policy categories to include for that agent).
 
@@ -24,18 +24,18 @@ So: **each agent is connected to one KB**. What that KB contains is decided by *
 
 **AGENT_SYNC_MAP** (in `src/lib/sync-to-watson.ts`) defines **what** is synced into each agent’s KB:
 
-| Agent | Projects | Tickets | Notes | Policies (categories) |
-|-------|----------|---------|-------|------------------------|
-| Onboarding Assistant | — | — | ✓ | hr, it |
-| Project & Hosting Assistant | ✓ | ✓ | ✓ | — |
-| IT Support & Access | — | — | ✓ | it |
-| HR Policy Assistant | — | — | — | hr |
-| Process & How-To Assistant | — | — | ✓ | — |
-| Security & Compliance | — | — | — | security, compliance |
-| Incident & Troubleshooting | — | ✓ | ✓ | — |
-| Manager & Team Lead | — | — | ✓ | hr, it |
-| Knowledge & Learning | ✓ | — | ✓ | — |
-| Response Verifier | — | — | — | security, compliance |
+| Agent                       | Projects | Tickets | Notes | Policies (categories) |
+| --------------------------- | -------- | ------- | ----- | --------------------- |
+| Onboarding Assistant        | —        | —       | ✓     | hr, it                |
+| Project & Hosting Assistant | ✓        | ✓       | ✓     | —                     |
+| IT Support & Access         | —        | —       | ✓     | it                    |
+| HR Policy Assistant         | —        | —       | —     | hr                    |
+| Process & How-To Assistant  | —        | —       | ✓     | —                     |
+| Security & Compliance       | —        | —       | —     | security, compliance  |
+| Incident & Troubleshooting  | —        | ✓       | ✓     | —                     |
+| Manager & Team Lead         | —        | —       | ✓     | hr, it                |
+| Knowledge & Learning        | ✓        | —       | ✓     | —                     |
+| Response Verifier           | —        | —       | —     | security, compliance  |
 
 - **Projects**: name, slug, status, description, whereHosted, ticket count.
 - **Tickets**: title, project, status, kind, description.

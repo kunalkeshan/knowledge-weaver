@@ -6,7 +6,6 @@ import type {
   WatsonAgentCreateBody,
   WatsonAgentFull,
   WatsonKnowledgeBase,
-  WatsonKnowledgeBaseStatus,
   WatsonKnowledgeBaseStatusResponse,
   WatsonRunsRequestBody,
   WatsonRunsStreamChunk,
@@ -153,7 +152,7 @@ export async function listWatsonAgents(): Promise<WatsonAgent[]> {
     throw new Error(`List agents failed: ${res.status} ${text}`)
   }
   const data = (await res.json()) as WatsonAgentApi[] | { agents?: WatsonAgentApi[] }
-  const rawList = Array.isArray(data) ? data : data.agents ?? []
+  const rawList = Array.isArray(data) ? data : (data.agents ?? [])
   const agents: WatsonAgent[] = rawList.map((item) => ({
     agent_id: item.id,
     name: item.display_name ?? item.name,
@@ -163,7 +162,7 @@ export async function listWatsonAgents(): Promise<WatsonAgent[]> {
     '[Watson] listWatsonAgents: got',
     agents.length,
     'agents',
-    agents.map((a) => ({ agent_id: a.agent_id, name: a.name }))
+    agents.map((a) => ({ agent_id: a.agent_id, name: a.name })),
   )
   return agents
 }
@@ -274,7 +273,7 @@ export async function getWatsonAgentFull(agentId: string): Promise<WatsonAgentFu
  */
 export async function updateWatsonAgent(
   agentId: string,
-  data: { knowledge_base?: string[]; name?: string; description?: string; instructions?: string }
+  data: { knowledge_base?: string[]; name?: string; description?: string; instructions?: string },
 ): Promise<WatsonAgentFull> {
   const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
   if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
@@ -334,7 +333,7 @@ export async function listWatsonKnowledgeBases(): Promise<WatsonKnowledgeBase[]>
     throw new Error(`List knowledge bases failed: ${res.status} ${text}`)
   }
   const data = (await res.json()) as WatsonKnowledgeBase[] | { knowledge_bases?: WatsonKnowledgeBase[] }
-  return Array.isArray(data) ? data : data.knowledge_bases ?? []
+  return Array.isArray(data) ? data : (data.knowledge_bases ?? [])
 }
 
 /** Model from GET /v1/orchestrate/models (or list-models API) */
@@ -353,10 +352,7 @@ export async function listWatsonModels(): Promise<WatsonModel[]> {
   const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
   if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
   const headers = await getWatsonAuthHeaders()
-  const urlsToTry = [
-    `${baseUrl}/v1/orchestrate/models`,
-    `${baseUrl}/api/v1/models/list`,
-  ]
+  const urlsToTry = [`${baseUrl}/v1/orchestrate/models`, `${baseUrl}/api/v1/models/list`]
   for (const url of urlsToTry) {
     console.log('[Watson] listWatsonModels: GET', url)
     const res = await fetch(url, { headers })
@@ -365,8 +361,13 @@ export async function listWatsonModels(): Promise<WatsonModel[]> {
       continue
     }
     const data = (await res.json()) as WatsonModel[] | { resources?: WatsonModel[] }
-    const list = Array.isArray(data) ? data : data.resources ?? []
-    console.log('[Watson] listWatsonModels: got', list.length, 'model(s)', list.slice(0, 3).map((m) => m.id))
+    const list = Array.isArray(data) ? data : (data.resources ?? [])
+    console.log(
+      '[Watson] listWatsonModels: got',
+      list.length,
+      'model(s)',
+      list.slice(0, 3).map((m) => m.id),
+    )
     return list
   }
   console.error('[Watson] listWatsonModels: all paths failed')
@@ -427,9 +428,7 @@ export async function getWatsonKnowledgeBase(kbId: string): Promise<WatsonKnowle
 /**
  * Get knowledge base status (full response including documents from /status API)
  */
-export async function getWatsonKnowledgeBaseStatus(
-  kbId: string
-): Promise<WatsonKnowledgeBaseStatusResponse | null> {
+export async function getWatsonKnowledgeBaseStatus(kbId: string): Promise<WatsonKnowledgeBaseStatusResponse | null> {
   const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
   if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
   const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}/status`
@@ -448,9 +447,7 @@ export async function getWatsonKnowledgeBaseStatus(
 /**
  * Get knowledge base with documents merged from /status API (so documents list is populated).
  */
-export async function getWatsonKnowledgeBaseWithDocuments(
-  kbId: string
-): Promise<WatsonKnowledgeBase | null> {
+export async function getWatsonKnowledgeBaseWithDocuments(kbId: string): Promise<WatsonKnowledgeBase | null> {
   const kb = await getWatsonKnowledgeBase(kbId)
   if (!kb) return null
   const status = await getWatsonKnowledgeBaseStatus(kbId)
@@ -458,10 +455,12 @@ export async function getWatsonKnowledgeBaseWithDocuments(
   return {
     ...kb,
     documents: status.documents ?? kb.documents ?? [],
-    vector_index: kb.vector_index ?? (status.built_in_index_status && {
-      status: status.built_in_index_status,
-      status_msg: status.built_in_index_status_msg,
-    }),
+    vector_index:
+      kb.vector_index ??
+      (status.built_in_index_status && {
+        status: status.built_in_index_status,
+        status_msg: status.built_in_index_status_msg,
+      }),
   }
 }
 
@@ -477,9 +476,7 @@ export interface DocumentDisplayInfo {
  * so names match what users see in Watson UI (e.g. file names like sync-db-...-IT-Support.txt).
  * If you add "URL source" to documents in Watson, citations can show as clickable links.
  */
-export async function getAgentDocumentDisplayMap(
-  kbIds: string[]
-): Promise<Map<string, DocumentDisplayInfo>> {
+export async function getAgentDocumentDisplayMap(kbIds: string[]): Promise<Map<string, DocumentDisplayInfo>> {
   const map = new Map<string, DocumentDisplayInfo>()
   await Promise.all(
     kbIds.map(async (kbId) => {
@@ -488,12 +485,11 @@ export async function getAgentDocumentDisplayMap(
       for (const doc of status.documents) {
         const id = doc.id
         if (!id) continue
-        const displayName =
-          doc.metadata?.original_file_name ?? doc.name ?? id
+        const displayName = doc.metadata?.original_file_name ?? doc.name ?? id
         const url = doc.metadata?.url ?? doc.metadata?.source_url
         map.set(id, { displayName, url })
       }
-    })
+    }),
   )
   return map
 }
@@ -509,7 +505,7 @@ export type FileLike = File | { buffer: ArrayBuffer; name: string; type: string 
 export async function createWatsonKnowledgeBase(
   name: string,
   files: FileLike[],
-  description?: string
+  description?: string,
 ): Promise<WatsonKnowledgeBase> {
   const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
   if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
@@ -562,12 +558,12 @@ export async function createWatsonKnowledgeBase(
       })
       throw new Error(
         `Create knowledge base failed: ${resDoc.status} ${textDoc}. ` +
-          'If this persists, the Knowledge Base create API may be unavailable for your Watson Orchestrate instance (e.g. entitlement or region). Try creating a knowledge base in the IBM watsonx Orchestrate UI, or contact IBM support.'
+          'If this persists, the Knowledge Base create API may be unavailable for your Watson Orchestrate instance (e.g. entitlement or region). Try creating a knowledge base in the IBM watsonx Orchestrate UI, or contact IBM support.',
       )
     }
     const docJson = (await resDoc.json()) as Record<string, unknown>
     // Multipart API may return { knowledge_base: { id, name, ... } } or { id, name, ... }
-    kb = (docJson.knowledge_base as WatsonKnowledgeBase) ?? (docJson as WatsonKnowledgeBase)
+    kb = (docJson.knowledge_base as unknown as WatsonKnowledgeBase) ?? (docJson as unknown as WatsonKnowledgeBase)
     if (!kb?.id && typeof (docJson as { id?: string }).id === 'string') {
       kb = { ...kb, id: (docJson as { id: string }).id } as WatsonKnowledgeBase
     }
@@ -590,17 +586,14 @@ export async function createWatsonKnowledgeBase(
  * @see https://developer.watson-orchestrate.ibm.com/apis/knowledge-bases/ingest-additional-documents-into-a-knowledge-base
  * @see https://developer.watson-orchestrate.ibm.com/apis/knowledge-bases/patch-a-knowledge-base-by-uploading-documents-or-providing-a-external-vector-index
  */
-export async function addDocumentsToKnowledgeBase(
-  kbId: string,
-  files: FileLike[]
-): Promise<WatsonKnowledgeBase> {
+export async function addDocumentsToKnowledgeBase(kbId: string, files: FileLike[]): Promise<WatsonKnowledgeBase> {
   const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
   if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
   const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}/documents`
   const fileInfos = files.map((f) =>
     f instanceof File
       ? { name: f.name, type: f.type, size: f.size }
-      : { name: f.name, type: f.type, size: (f.buffer as ArrayBuffer).byteLength }
+      : { name: f.name, type: f.type, size: (f.buffer as ArrayBuffer).byteLength },
   )
   const headers = await getWatsonAuthHeaders()
   const authHeaders = {
@@ -798,7 +791,14 @@ export async function* streamWatsonChat(
     while (true) {
       const { done, value } = await reader.read()
       if (done) {
-        console.log('[Watson] streamWatsonChat: stream ended. totalBytes=', totalBytes, 'buffer length=', buffer.length, 'buffer sample=', JSON.stringify(buffer.slice(0, 400)))
+        console.log(
+          '[Watson] streamWatsonChat: stream ended. totalBytes=',
+          totalBytes,
+          'buffer length=',
+          buffer.length,
+          'buffer sample=',
+          JSON.stringify(buffer.slice(0, 400)),
+        )
         break
       }
       readCount++
@@ -806,7 +806,14 @@ export async function* streamWatsonChat(
       totalBytes += value.length
       buffer += chunk
       if (readCount <= 2) {
-        console.log('[Watson] streamWatsonChat read', readCount, 'bytes=', value.length, 'sample=', JSON.stringify(chunk.slice(0, 300)))
+        console.log(
+          '[Watson] streamWatsonChat read',
+          readCount,
+          'bytes=',
+          value.length,
+          'sample=',
+          JSON.stringify(chunk.slice(0, 300)),
+        )
       }
       const lines = buffer.split('\n')
       buffer = lines.pop() ?? ''
@@ -820,87 +827,92 @@ export async function* streamWatsonChat(
         if (!raw || raw === '[DONE]') continue
         try {
           const chunk = JSON.parse(raw) as WatsonRunsStreamChunk
-            chunkCount++
-            if (chunkCount <= DEBUG_CHUNKS) {
-              console.log('[Watson] streamWatsonChat chunk', chunkCount, {
-                event: chunk.event,
-                dataKeys: chunk.data ? Object.keys(chunk.data) : [],
-                hasContent: !!chunk.content,
-                thread_id: chunk.thread_id ?? chunk.data?.thread_id,
-              })
-            }
-
-            threadId = chunk.thread_id ?? chunk.data?.thread_id ?? threadId
-
-            const event = chunk.event
-            const data = chunk.data
-
-            function extractText(value: unknown): string {
-              if (typeof value === 'string') return value
-              if (value == null) return ''
-              if (Array.isArray(value)) {
-                return (value as Array<{ type?: string; response_type?: string; text?: string; content?: string }>)
-                  .map((p) => {
-                    if (!p) return ''
-                    const isText = p.type === 'text' || p.response_type === 'text'
-                    return isText ? (p.text ?? p.content ?? '') : ''
-                  })
-                  .join('')
-              }
-              if (typeof value === 'object') {
-                const o = value as Record<string, unknown>
-                if ('text' in o && typeof o.text === 'string') return o.text
-                if ('content' in o) return extractText(o.content)
-                if ('delta' in o) return extractText(o.delta)
-              }
-              return ''
-            }
-
-            // Only forward actual assistant message content (message.delta / message.completed).
-            // run.step.intermediate and run.step.thinking are not forwarded so the UI can show
-            // a thinking animation instead of "The agent is processing your request…" text.
-            if (event === 'message.delta' && data) {
-              const delta = extractText(data.delta) || extractText(data.content) || extractText(data.text)
-              if (chunkCount <= DEBUG_CHUNKS && 'delta' in data)
-                console.log('[Watson] message.delta data.delta type=', typeof data.delta, 'value=', JSON.stringify(data.delta)?.slice(0, 120))
-              if (delta) yield { type: 'content', content: delta }
-            } else if (event === 'message.completed' && data) {
-              const content = extractText(data.content) || extractText(data.text)
-              if (content) yield { type: 'content', content }
-              const sources = extractSourcesFromChunkData(data)
-              if (sources.length > 0) yield { type: 'sources', sources }
-            }
-            // Also check run.step.completed for tool/KB citations
-            if ((event === 'run.step.completed' || event === 'run.completed') && data) {
-              const sources = extractSourcesFromChunkData(data)
-              if (sources.length > 0) yield { type: 'sources', sources }
-            }
-            // run.step.delta, run.step.intermediate, run.step.thinking: not yielded as content
-
-            const content = chunk.content
-            if (Array.isArray(content)) {
-              for (const part of content) {
-                if (part?.type === 'text') {
-                  const text = part.text ?? part.content
-                  if (typeof text === 'string') yield { type: 'content', content: text }
-                }
-              }
-            } else if (data && !event) {
-              const dataContent =
-                typeof data.content === 'string'
-                  ? data.content
-                  : typeof data.delta === 'string'
-                    ? data.delta
-                    : typeof data.text === 'string'
-                      ? data.text
-                      : ''
-              if (dataContent) yield { type: 'content', content: dataContent }
-            }
-          } catch (parseErr) {
-            if (chunkCount <= DEBUG_CHUNKS) {
-              console.warn('[Watson] streamWatsonChat parse error', raw?.slice(0, 100), parseErr)
-            }
+          chunkCount++
+          if (chunkCount <= DEBUG_CHUNKS) {
+            console.log('[Watson] streamWatsonChat chunk', chunkCount, {
+              event: chunk.event,
+              dataKeys: chunk.data ? Object.keys(chunk.data) : [],
+              hasContent: !!chunk.content,
+              thread_id: chunk.thread_id ?? chunk.data?.thread_id,
+            })
           }
+
+          threadId = chunk.thread_id ?? chunk.data?.thread_id ?? threadId
+
+          const event = chunk.event
+          const data = chunk.data
+
+          function extractText(value: unknown): string {
+            if (typeof value === 'string') return value
+            if (value == null) return ''
+            if (Array.isArray(value)) {
+              return (value as Array<{ type?: string; response_type?: string; text?: string; content?: string }>)
+                .map((p) => {
+                  if (!p) return ''
+                  const isText = p.type === 'text' || p.response_type === 'text'
+                  return isText ? (p.text ?? p.content ?? '') : ''
+                })
+                .join('')
+            }
+            if (typeof value === 'object') {
+              const o = value as Record<string, unknown>
+              if ('text' in o && typeof o.text === 'string') return o.text
+              if ('content' in o) return extractText(o.content)
+              if ('delta' in o) return extractText(o.delta)
+            }
+            return ''
+          }
+
+          // Only forward actual assistant message content (message.delta / message.completed).
+          // run.step.intermediate and run.step.thinking are not forwarded so the UI can show
+          // a thinking animation instead of "The agent is processing your request…" text.
+          if (event === 'message.delta' && data) {
+            const delta = extractText(data.delta) || extractText(data.content) || extractText(data.text)
+            if (chunkCount <= DEBUG_CHUNKS && 'delta' in data)
+              console.log(
+                '[Watson] message.delta data.delta type=',
+                typeof data.delta,
+                'value=',
+                JSON.stringify(data.delta)?.slice(0, 120),
+              )
+            if (delta) yield { type: 'content', content: delta }
+          } else if (event === 'message.completed' && data) {
+            const content = extractText(data.content) || extractText(data.text)
+            if (content) yield { type: 'content', content }
+            const sources = extractSourcesFromChunkData(data)
+            if (sources.length > 0) yield { type: 'sources', sources }
+          }
+          // Also check run.step.completed for tool/KB citations
+          if ((event === 'run.step.completed' || event === 'run.completed') && data) {
+            const sources = extractSourcesFromChunkData(data)
+            if (sources.length > 0) yield { type: 'sources', sources }
+          }
+          // run.step.delta, run.step.intermediate, run.step.thinking: not yielded as content
+
+          const content = chunk.content
+          if (Array.isArray(content)) {
+            for (const part of content) {
+              if (part?.type === 'text') {
+                const text = part.text ?? part.content
+                if (typeof text === 'string') yield { type: 'content', content: text }
+              }
+            }
+          } else if (data && !event) {
+            const dataContent =
+              typeof data.content === 'string'
+                ? data.content
+                : typeof data.delta === 'string'
+                  ? data.delta
+                  : typeof data.text === 'string'
+                    ? data.text
+                    : ''
+            if (dataContent) yield { type: 'content', content: dataContent }
+          }
+        } catch (parseErr) {
+          if (chunkCount <= DEBUG_CHUNKS) {
+            console.warn('[Watson] streamWatsonChat parse error', raw?.slice(0, 100), parseErr)
+          }
+        }
       }
     }
   } finally {

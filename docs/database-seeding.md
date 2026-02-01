@@ -19,12 +19,12 @@ Seeding assumes at least one **User** exists (e.g. from auth) to use as `created
 
 ## 2. Volume (good average / market-like)
 
-| Entity   | Suggested count | Rationale |
-|----------|------------------|-----------|
-| Projects | 6–12             | Enough to show multiple teams/products; real companies often have 5–20 active projects. |
-| Tickets  | 30–80            | Mix of open/done; 3–10 per project on average; realistic backlog. |
-| Notes    | 15–30            | Runbooks, how-tos, meeting notes; 2–4 per project + global. |
-| Policies | 8–18             | HR (3–5), IT (2–4), security (2–4), compliance (2–3). |
+| Entity   | Suggested count | Rationale                                                                               |
+| -------- | --------------- | --------------------------------------------------------------------------------------- |
+| Projects | 6–12            | Enough to show multiple teams/products; real companies often have 5–20 active projects. |
+| Tickets  | 30–80           | Mix of open/done; 3–10 per project on average; realistic backlog.                       |
+| Notes    | 15–30           | Runbooks, how-tos, meeting notes; 2–4 per project + global.                             |
+| Policies | 8–18            | HR (3–5), IT (2–4), security (2–4), compliance (2–3).                                   |
 
 Total: on the order of 60–140 rows. Adjust up or down for “a lot” vs “light” demos; this range is a good average for market-style demos and dev.
 

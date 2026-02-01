@@ -31,5 +31,6 @@ export const auth = betterAuth({
   trustedOrigins: [
     ...(baseURL ? [baseURL] : []),
     'https://sharla-unblossoming-caressingly.ngrok-free.dev',
+    'https://knowledge-weaver-seven.vercel.app/',
   ],
 })

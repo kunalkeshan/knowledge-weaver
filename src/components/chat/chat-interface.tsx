@@ -52,8 +52,16 @@ export function ChatInterface({
   )
 
   const onFinish = useCallback(async () => {
-    queryClient.invalidateQueries({ queryKey: ['chat', 'threads'] })
-    queryClient.invalidateQueries({ queryKey: ['chat', 'thread', threadId] })
+    // Defer invalidation so the stream-done UI paints first and we avoid a visible flash/refresh
+    const runAfterSettle = () => {
+      queryClient.invalidateQueries({ queryKey: ['chat', 'threads'] })
+      queryClient.invalidateQueries({ queryKey: ['chat', 'thread', threadId] })
+    }
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(() => setTimeout(runAfterSettle, 50))
+    } else {
+      setTimeout(runAfterSettle, 100)
+    }
     if (!threadId && onThreadIdChange) {
       try {
         const res = await fetch(

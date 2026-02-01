@@ -14,6 +14,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Badge } from '@/components/ui/badge'
+import { ProjectNotesSection } from '@/components/tracking/project-notes-section'
 import Link from 'next/link'
 
 export default async function ProjectDetailPage({
@@ -28,7 +29,7 @@ export default async function ProjectDetailPage({
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
-      _count: { select: { tickets: true, notes: true } },
+      _count: { select: { tickets: true } },
       tickets: { orderBy: { updatedAt: 'desc' }, take: 50 },
     },
   })
@@ -87,27 +88,15 @@ export default async function ProjectDetailPage({
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border bg-card p-4">
-              <h2 className="text-sm font-semibold">Tickets</h2>
-              <p className="mt-1 text-2xl font-semibold">{project._count.tickets}</p>
-              <Link
-                href={`/dashboard/tracking?tab=tickets&projectId=${project.id}`}
-                className="mt-2 text-sm text-primary hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <h2 className="text-sm font-semibold">Notes</h2>
-              <p className="mt-1 text-2xl font-semibold">{project._count.notes}</p>
-              <Link
-                href={`/dashboard/tracking?tab=notes&projectId=${project.id}`}
-                className="mt-2 text-sm text-primary hover:underline"
-              >
-                View all
-              </Link>
-            </div>
+          <div className="rounded-xl border bg-card p-4 max-w-xs">
+            <h2 className="text-sm font-semibold">Tickets</h2>
+            <p className="mt-1 text-2xl font-semibold">{project._count.tickets}</p>
+            <Link
+              href={`/dashboard/tracking?tab=tickets&projectId=${project.id}`}
+              className="mt-2 text-sm text-primary hover:underline"
+            >
+              View all
+            </Link>
           </div>
 
           {project.tickets.length > 0 && (
@@ -128,6 +117,8 @@ export default async function ProjectDetailPage({
               </ul>
             </div>
           )}
+
+          <ProjectNotesSection projectId={project.id} projectName={project.name} />
         </div>
       </SidebarInset>
     </SidebarProvider>

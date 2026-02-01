@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import type { FileLike } from '@/lib/watson'
 import {
   addDocumentsToKnowledgeBase,
   deleteKnowledgeBaseDocuments,
@@ -6,29 +7,26 @@ import {
   getWatsonKnowledgeBaseStatus,
   listWatsonAgents,
 } from '@/lib/watson'
-import type { FileLike } from '@/lib/watson'
 
 /**
  * Which DB entities to sync to each agent's knowledge base (by display name).
  * Each agent has one KB; this controls what content (projects, tickets, notes, policies) is pushed into it.
  * Policies use category filter: 'hr' | 'it' | 'security' | 'compliance' etc.
  */
-const AGENT_SYNC_MAP: Record<
-  string,
-  { projects?: boolean; tickets?: boolean; notes?: boolean; policies?: string[] }
-> = {
-  'Onboarding Assistant': { notes: true, policies: ['hr', 'it'] },
-  'Project & Hosting Assistant': { projects: true, tickets: true, notes: true },
-  'IT Support & Access': { notes: true, policies: ['it'] },
-  'HR Policy Assistant': { policies: ['hr'] },
-  'Process & How-To Assistant': { notes: true },
-  'Security & Compliance': { policies: ['security', 'compliance'] },
-  'Incident & Troubleshooting': { notes: true, tickets: true },
-  'Manager & Team Lead': { notes: true, policies: ['hr', 'it'] },
-  'Knowledge & Learning': { projects: true, notes: true },
-  // Response Verifier: optional context; it mainly reviews other agents' answers
-  'Response Verifier': { policies: ['security', 'compliance'] },
-}
+const AGENT_SYNC_MAP: Record<string, { projects?: boolean; tickets?: boolean; notes?: boolean; policies?: string[] }> =
+  {
+    'Onboarding Assistant': { notes: true, policies: ['hr', 'it'] },
+    'Project & Hosting Assistant': { projects: true, tickets: true, notes: true },
+    'IT Support & Access': { notes: true, policies: ['it'] },
+    'HR Policy Assistant': { policies: ['hr'] },
+    'Process & How-To Assistant': { notes: true },
+    'Security & Compliance': { policies: ['security', 'compliance'] },
+    'Incident & Troubleshooting': { notes: true, tickets: true },
+    'Manager & Team Lead': { notes: true, policies: ['hr', 'it'] },
+    'Knowledge & Learning': { projects: true, notes: true },
+    // Response Verifier: optional context; it mainly reviews other agents' answers
+    'Response Verifier': { policies: ['security', 'compliance'] },
+  }
 
 const SYNC_DOC_PREFIX = 'sync-db-'
 
@@ -41,9 +39,12 @@ function textToFileLike(text: string, name: string): FileLike {
   }
 }
 
-export async function buildSyncDocForAgent(
-  config: { projects?: boolean; tickets?: boolean; notes?: boolean; policies?: string[] }
-): Promise<string> {
+export async function buildSyncDocForAgent(config: {
+  projects?: boolean
+  tickets?: boolean
+  notes?: boolean
+  policies?: string[]
+}): Promise<string> {
   const parts: string[] = []
 
   if (config.projects) {
@@ -53,7 +54,7 @@ export async function buildSyncDocForAgent(
     })
     for (const p of projects) {
       parts.push(
-        `## Project: ${p.name}\nSlug: ${p.slug}\nStatus: ${p.status}\nDescription: ${p.description ?? '—'}\nWhere hosted: ${p.whereHosted ?? '—'}\nTickets: ${p._count.tickets}\n`
+        `## Project: ${p.name}\nSlug: ${p.slug}\nStatus: ${p.status}\nDescription: ${p.description ?? '—'}\nWhere hosted: ${p.whereHosted ?? '—'}\nTickets: ${p._count.tickets}\n`,
       )
     }
   }
@@ -65,7 +66,7 @@ export async function buildSyncDocForAgent(
     })
     for (const t of tickets) {
       parts.push(
-        `## Ticket: ${t.title}\nProject: ${t.project.name}\nStatus: ${t.status}\nKind: ${t.kind}\nDescription: ${t.description ?? '—'}\n`
+        `## Ticket: ${t.title}\nProject: ${t.project.name}\nStatus: ${t.status}\nKind: ${t.kind}\nDescription: ${t.description ?? '—'}\n`,
       )
     }
   }
@@ -77,7 +78,7 @@ export async function buildSyncDocForAgent(
     })
     for (const n of notes) {
       parts.push(
-        `## Note: ${n.title}\nTag: ${n.tag ?? '—'}\nProject: ${n.project?.name ?? '—'}\nContent:\n${n.content}\n`
+        `## Note: ${n.title}\nTag: ${n.tag ?? '—'}\nProject: ${n.project?.name ?? '—'}\nContent:\n${n.content}\n`,
       )
     }
   }
@@ -88,7 +89,9 @@ export async function buildSyncDocForAgent(
       orderBy: { effectiveAt: 'desc' },
     })
     for (const p of policies) {
-      parts.push(`## Policy: ${p.title}\nCategory: ${p.category}\nEffective: ${p.effectiveAt}\nContent:\n${p.content}\n`)
+      parts.push(
+        `## Policy: ${p.title}\nCategory: ${p.category}\nEffective: ${p.effectiveAt}\nContent:\n${p.content}\n`,
+      )
     }
   }
 

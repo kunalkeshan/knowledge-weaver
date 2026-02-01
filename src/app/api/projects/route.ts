@@ -28,7 +28,13 @@ export async function POST(request: Request) {
   if (!body.name?.trim()) {
     return NextResponse.json({ error: 'name is required' }, { status: 400 })
   }
-  const slug = (body.slug ?? body.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')).trim()
+  const slug = (
+    body.slug ??
+    body.name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+  ).trim()
   const project = await prisma.project.create({
     data: {
       name: body.name.trim(),

@@ -54,8 +54,8 @@ export function RecentChats() {
       {threads.slice(0, 10).map((thread) => {
         const label = thread.firstUserMessage?.trim()
           ? (thread.firstUserMessage.length > 56
-              ? thread.firstUserMessage.slice(0, 56).trim() + '…'
-              : thread.firstUserMessage)
+            ? thread.firstUserMessage.slice(0, 56).trim() + '…'
+            : thread.firstUserMessage)
           : (thread.agentName ?? thread.agentId)
         return (
           <li key={thread.id}>
@@ -66,14 +66,14 @@ export function RecentChats() {
               <span className="truncate text-sm font-medium">
                 {label}
               </span>
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {thread.messageCount != null && (
-                <>
-                  {thread.messageCount} message{thread.messageCount !== 1 ? 's' : ''}
-                  <span aria-hidden>·</span>
-                </>
-              )}
-              {formatRelativeTime(thread.updatedAt)}
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {thread.messageCount != null && (
+                  <>
+                    {thread.messageCount} message{thread.messageCount !== 1 ? 's' : ''}
+                    <span aria-hidden>·</span>
+                  </>
+                )}
+                {formatRelativeTime(thread.updatedAt)}
               </span>
             </Link>
           </li>

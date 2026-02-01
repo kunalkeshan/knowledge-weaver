@@ -16,25 +16,24 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 
-export default async function NoteDetailPage({
+export default async function ProjectNoteDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string; noteId: string }>
 }) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect('/login')
 
-  const { id } = await params
-  const note = await prisma.note.findUnique({
-    where: { id },
-    include: { project: true },
-  })
-  if (!note) notFound()
-
-  // Redirect to project-scoped URL when note belongs to a project
-  if (note.projectId && note.project) {
-    redirect(`/dashboard/tracking/projects/${note.project.id}/notes/${note.id}`)
-  }
+  const { id: projectId, noteId } = await params
+  const [project, note] = await Promise.all([
+    prisma.project.findUnique({ where: { id: projectId } }),
+    prisma.note.findUnique({
+      where: { id: noteId },
+      include: { project: true },
+    }),
+  ])
+  if (!project || !note) notFound()
+  if (note.projectId !== projectId) notFound()
 
   return (
     <SidebarProvider>
@@ -59,6 +58,12 @@ export default async function NoteDetailPage({
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href={`/dashboard/tracking/projects/${project.id}`}>{project.name}</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
                   <BreadcrumbPage>{note.title}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
@@ -70,14 +75,12 @@ export default async function NoteDetailPage({
             <h1 className="text-2xl font-semibold tracking-tight">{note.title}</h1>
             <div className="flex flex-wrap items-center gap-2">
               {note.tag && <Badge variant="outline">{note.tag}</Badge>}
-              {note.project && (
-                <Link
-                  href={`/dashboard/tracking/projects/${note.project.id}`}
-                  className="text-sm text-primary hover:underline"
-                >
-                  {note.project.name}
-                </Link>
-              )}
+              <Link
+                href={`/dashboard/tracking/projects/${project.id}`}
+                className="text-sm text-primary hover:underline"
+              >
+                {project.name}
+              </Link>
             </div>
           </div>
 
@@ -97,16 +100,17 @@ export default async function NoteDetailPage({
                 <dt className="text-muted-foreground">Updated</dt>
                 <dd>{new Date(note.updatedAt).toLocaleString()}</dd>
               </div>
-              {note.project && (
-                <div>
-                  <dt className="text-muted-foreground">Project</dt>
-                  <dd>
-                    <Link href={`/dashboard/tracking/projects/${note.project.id}`} className="text-primary hover:underline">
-                      {note.project.name}
-                    </Link>
-                  </dd>
-                </div>
-              )}
+              <div>
+                <dt className="text-muted-foreground">Project</dt>
+                <dd>
+                  <Link
+                    href={`/dashboard/tracking/projects/${project.id}`}
+                    className="text-primary hover:underline"
+                  >
+                    {project.name}
+                  </Link>
+                </dd>
+              </div>
             </dl>
           </div>
         </div>

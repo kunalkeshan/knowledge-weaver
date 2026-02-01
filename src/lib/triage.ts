@@ -11,7 +11,11 @@ const RESPONSE_VERIFIER_DISPLAY_NAME = 'Response Verifier'
 
 /** Keyword rules: phrase (lower) -> { agentDisplayName, isHighRisk? }. Order = priority. Never route to Response Verifier. */
 const TRIAGE_RULES: { keywords: string[]; agentName: string; isHighRisk?: boolean }[] = [
-  { keywords: ['security', 'compliance', 'pii', 'production access', 'audit'], agentName: 'Security & Compliance', isHighRisk: true },
+  {
+    keywords: ['security', 'compliance', 'pii', 'production access', 'audit'],
+    agentName: 'Security & Compliance',
+    isHighRisk: true,
+  },
   { keywords: ['incident', 'outage', 'down', 'troubleshoot', 'runbook'], agentName: 'Incident & Troubleshooting' },
   {
     keywords: [
@@ -31,7 +35,10 @@ const TRIAGE_RULES: { keywords: string[]; agentName: string; isHighRisk?: boolea
   },
   { keywords: ['vpn', 'access', 'repo', 'it support', 'laptop', 'device'], agentName: 'IT Support & Access' },
   { keywords: ['policy', 'hr', 'pto', 'leave', 'remote work', 'code of conduct'], agentName: 'HR Policy Assistant' },
-  { keywords: ['project', 'hosted', 'repo', 'where is', 'staging', 'deploy'], agentName: 'Project & Hosting Assistant' },
+  {
+    keywords: ['project', 'hosted', 'repo', 'where is', 'staging', 'deploy'],
+    agentName: 'Project & Hosting Assistant',
+  },
   { keywords: ['how do i', 'process', 'how to', 'procedure', 'escalat'], agentName: 'Process & How-To Assistant' },
   { keywords: ['manager', 'team lead', 'contractor', 'approval'], agentName: 'Manager & Team Lead' },
   { keywords: ['learn', 'documentation', 'learning path', 'overview'], agentName: 'Knowledge & Learning' },

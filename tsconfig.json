@@ -19,7 +19,15 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@modelcontextprotocol/sdk/server/mcp": ["./node_modules/@modelcontextprotocol/sdk/dist/esm/server/mcp"],
+      "@modelcontextprotocol/sdk/server/streamableHttp": [
+        "./node_modules/@modelcontextprotocol/sdk/dist/esm/server/streamableHttp"
+      ],
+      "@modelcontextprotocol/sdk/server/express": ["./node_modules/@modelcontextprotocol/sdk/dist/esm/server/express"],
+      "@modelcontextprotocol/sdk/server/webStandardStreamableHttp": [
+        "./node_modules/@modelcontextprotocol/sdk/dist/esm/server/webStandardStreamableHttp"
+      ]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],

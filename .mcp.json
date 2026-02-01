@@ -6,11 +6,17 @@
     },
     "shadcn": {
       "command": "npx",
-      "args": ["shadcn@latest", "mcp"]
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
     },
     "tanstack": {
       "command": "npx",
-      "args": ["@tanstack/cli", "mcp"]
+      "args": [
+        "@tanstack/cli",
+        "mcp"
+      ]
     }
   }
 }

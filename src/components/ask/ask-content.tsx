@@ -35,7 +35,7 @@ export function AskContent({ orchestratorAgentId }: { orchestratorAgentId?: stri
       if (data.isHighRisk) params.set('highRisk', '1')
       router.push(`/dashboard/agents/${data.agentId}/chat?${params.toString()}`)
     },
-    onError: () => {},
+    onError: () => { },
   })
 
   const handleSubmit = (e: React.FormEvent) => {

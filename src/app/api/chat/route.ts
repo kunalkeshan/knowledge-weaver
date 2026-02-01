@@ -1,12 +1,7 @@
 import { auth } from '@/lib/auth'
 import { isWatsonConfigured } from '@/lib/config'
 import { prisma } from '@/lib/prisma'
-import {
-  getAgentDocumentDisplayMap,
-  getWatsonAgentFull,
-  listWatsonAgents,
-  streamWatsonChat,
-} from '@/lib/watson'
+import { getAgentDocumentDisplayMap, getWatsonAgentFull, listWatsonAgents, streamWatsonChat } from '@/lib/watson'
 import type { WatsonRunsRequestBody, WatsonStreamSource } from '@/types/watson'
 import { NextResponse } from 'next/server'
 
@@ -35,10 +30,7 @@ export async function POST(request: Request) {
   }
   if (!isWatsonConfigured()) {
     console.log('[Chat] 503 Watson not configured')
-    return NextResponse.json(
-      { error: 'Watson not configured' },
-      { status: 503 }
-    )
+    return NextResponse.json({ error: 'Watson not configured' }, { status: 503 })
   }
 
   let body: {
@@ -60,10 +52,7 @@ export async function POST(request: Request) {
     })
   } catch (e) {
     console.error('[Chat] 400 Invalid JSON body', e)
-    return NextResponse.json(
-      { error: 'Invalid JSON body' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
   const agentId = body.agentId ?? body.data?.agentId
@@ -74,33 +63,26 @@ export async function POST(request: Request) {
 
   if (!agentId) {
     console.log('[Chat] 400 Missing agentId. body keys:', Object.keys(body))
-    return NextResponse.json(
-      { error: 'Missing agentId' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Missing agentId' }, { status: 400 })
   }
   if (!Array.isArray(messages)) {
     console.log('[Chat] 400 messages is not array:', typeof messages)
-    return NextResponse.json(
-      { error: 'messages must be an array' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'messages must be an array' }, { status: 400 })
   }
   if (messages.length === 0) {
     console.log('[Chat] 400 messages array empty')
-    return NextResponse.json(
-      { error: 'Missing or empty messages' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Missing or empty messages' }, { status: 400 })
   }
 
   const lastUser = [...messages].reverse().find((m) => m.role === 'user')
   if (!lastUser) {
-    console.log('[Chat] 400 No user message in messages. messages count:', messages.length, 'roles:', messages.map((m) => m.role))
-    return NextResponse.json(
-      { error: 'No user message in messages' },
-      { status: 400 }
+    console.log(
+      '[Chat] 400 No user message in messages. messages count:',
+      messages.length,
+      'roles:',
+      messages.map((m) => m.role),
     )
+    return NextResponse.json({ error: 'No user message in messages' }, { status: 400 })
   }
 
   const rawContent = lastUser.content
@@ -109,7 +91,7 @@ export async function POST(request: Request) {
     userContent = rawContent
   } else if (Array.isArray(rawContent)) {
     userContent = (rawContent as Array<{ type?: string; text?: string; content?: string }>)
-      .map((p) => (p.type === 'text' ? p.text ?? p.content : '') ?? '')
+      .map((p) => (p.type === 'text' ? (p.text ?? p.content) : '') ?? '')
       .filter(Boolean)
       .join('')
   } else {
@@ -117,14 +99,23 @@ export async function POST(request: Request) {
   }
 
   if (!userContent.trim()) {
-    console.log('[Chat] 400 No user message content. lastUser.content type:', typeof rawContent, 'sample:', JSON.stringify(rawContent)?.slice(0, 200))
-    return NextResponse.json(
-      { error: 'No user message content' },
-      { status: 400 }
+    console.log(
+      '[Chat] 400 No user message content. lastUser.content type:',
+      typeof rawContent,
+      'sample:',
+      JSON.stringify(rawContent)?.slice(0, 200),
     )
+    return NextResponse.json({ error: 'No user message content' }, { status: 400 })
   }
 
-  console.log('[Chat] validated: agentId=', agentId, 'threadId=', dbThreadId ?? 'new', 'userContent length=', userContent.length)
+  console.log(
+    '[Chat] validated: agentId=',
+    agentId,
+    'threadId=',
+    dbThreadId ?? 'new',
+    'userContent length=',
+    userContent.length,
+  )
 
   // Our thread id (DB) is used in URLs and API; Watson returns its own thread_id in run.started — we store that as watsonThreadId and send it on follow-up requests.
   let thread = dbThreadId
@@ -143,7 +134,11 @@ export async function POST(request: Request) {
     agent_id: agentId,
     ...(watsonThreadId ? { thread_id: watsonThreadId } : {}),
   }
-  console.log('[Chat] watsonBody:', { agent_id: watsonBody.agent_id, thread_id: watsonBody.thread_id, messageLength: userContent.length })
+  console.log('[Chat] watsonBody:', {
+    agent_id: watsonBody.agent_id,
+    thread_id: watsonBody.thread_id,
+    messageLength: userContent.length,
+  })
 
   const encoder = new TextEncoder()
   let fullAssistantContent = ''
@@ -151,34 +146,54 @@ export async function POST(request: Request) {
   const agentFull = await getWatsonAgentFull(agentId).catch(() => null)
   const hasKnowledgeBase = (agentFull?.knowledge_base?.length ?? 0) > 0
 
+  /** Enqueue only if the stream is still open (client may have closed the connection). */
+  function safeEnqueue(controller: ReadableStreamDefaultController<Uint8Array>, encoded: Uint8Array): boolean {
+    try {
+      controller.enqueue(encoded)
+      return true
+    } catch (err) {
+      if (err instanceof TypeError && String((err as Error).message).includes('already closed')) {
+        return false
+      }
+      throw err
+    }
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
+      let streamOpen = true
       try {
         // AG-UI: start run and message so client creates assistant message
-        controller.enqueue(
+        streamOpen = safeEnqueue(
+          controller,
           encoder.encode(
             sseLine({
               type: 'RUN_STARTED',
               runId: RUN_ID,
               timestamp: ts(),
-            })
-          )
+            }),
+          ),
         )
-        controller.enqueue(
+        if (!streamOpen) return
+        streamOpen = safeEnqueue(
+          controller,
           encoder.encode(
             sseLine({
               type: 'TEXT_MESSAGE_START',
               messageId: MESSAGE_ID,
               role: 'assistant',
               timestamp: ts(),
-            })
-          )
+            }),
+          ),
         )
+        if (!streamOpen) return
 
         for await (const chunk of streamWatsonChat(watsonBody)) {
+          if (!streamOpen) break
           if (chunk.type === 'content' && chunk.content) {
             fullAssistantContent += chunk.content
-            controller.enqueue(
+            streamOpen = safeEnqueue(
+              controller,
               encoder.encode(
                 sseLine({
                   type: 'TEXT_MESSAGE_CONTENT',
@@ -186,8 +201,8 @@ export async function POST(request: Request) {
                   delta: chunk.content,
                   content: fullAssistantContent,
                   timestamp: ts(),
-                })
-              )
+                }),
+              ),
             )
           } else if (chunk.type === 'sources' && chunk.sources?.length) {
             collectedSources.push(...chunk.sources)
@@ -211,7 +226,8 @@ export async function POST(request: Request) {
             if (verifierContent.trim()) {
               const verificationBlock = `\n\n---\n\n**Verification:** ${verifierContent.trim()}`
               fullAssistantContent += verificationBlock
-              controller.enqueue(
+              streamOpen = safeEnqueue(
+                controller,
                 encoder.encode(
                   sseLine({
                     type: 'TEXT_MESSAGE_CONTENT',
@@ -219,17 +235,16 @@ export async function POST(request: Request) {
                     delta: verificationBlock,
                     content: fullAssistantContent,
                     timestamp: ts(),
-                  })
-                )
+                  }),
+                ),
               )
             }
           }
         }
+        if (!streamOpen) return
 
         // Append knowledge-base verification: resolve document IDs using same /status API as right sidebar
-        const docDisplayMap = await getAgentDocumentDisplayMap(
-          agentFull?.knowledge_base ?? []
-        )
+        const docDisplayMap = await getAgentDocumentDisplayMap(agentFull?.knowledge_base ?? [])
         const seenIds = new Set<string>()
         const uniqueSources = collectedSources.filter((s) => {
           const id = s.id ?? s.title ?? s.name ?? s.file_name ?? ''
@@ -242,20 +257,15 @@ export async function POST(request: Request) {
           const sourceList = uniqueSources
             .map((s) => {
               const resolved = s.id ? docDisplayMap.get(s.id) : undefined
-              const label =
-                resolved?.displayName ??
-                s.title ??
-                s.name ??
-                s.file_name ??
-                s.id ??
-                'Document'
+              const label = resolved?.displayName ?? s.title ?? s.name ?? s.file_name ?? s.id ?? 'Document'
               if (resolved?.url) return `- [${label}](${resolved.url})`
               return `- ${label}`
             })
             .join('\n')
           const verificationBlock = sourceLabel + sourceList
           fullAssistantContent += verificationBlock
-          controller.enqueue(
+          streamOpen = safeEnqueue(
+            controller,
             encoder.encode(
               sseLine({
                 type: 'TEXT_MESSAGE_CONTENT',
@@ -263,14 +273,15 @@ export async function POST(request: Request) {
                 delta: verificationBlock,
                 content: fullAssistantContent,
                 timestamp: ts(),
-              })
-            )
+              }),
+            ),
           )
         } else if (hasKnowledgeBase) {
           const verificationBlock =
             "\n\n---\n\n*This answer was generated using this agent's linked knowledge base. You can see and manage sources in the right sidebar.*"
           fullAssistantContent += verificationBlock
-          controller.enqueue(
+          streamOpen = safeEnqueue(
+            controller,
             encoder.encode(
               sseLine({
                 type: 'TEXT_MESSAGE_CONTENT',
@@ -278,31 +289,36 @@ export async function POST(request: Request) {
                 delta: verificationBlock,
                 content: fullAssistantContent,
                 timestamp: ts(),
-              })
-            )
+              }),
+            ),
           )
         }
+        if (!streamOpen) return
 
         // AG-UI: end message and run
-        controller.enqueue(
+        streamOpen = safeEnqueue(
+          controller,
           encoder.encode(
             sseLine({
               type: 'TEXT_MESSAGE_END',
               messageId: MESSAGE_ID,
               timestamp: ts(),
-            })
-          )
+            }),
+          ),
         )
-        controller.enqueue(
+        if (!streamOpen) return
+        streamOpen = safeEnqueue(
+          controller,
           encoder.encode(
             sseLine({
               type: 'RUN_FINISHED',
               runId: RUN_ID,
               finishReason: 'stop',
               timestamp: ts(),
-            })
-          )
+            }),
+          ),
         )
+        if (!streamOpen) return
         let resolvedThread = thread
         if (!resolvedThread) {
           resolvedThread = await prisma.chatThread.create({
@@ -331,21 +347,29 @@ export async function POST(request: Request) {
             },
           })
         }
-        controller.enqueue(
-          encoder.encode(
-            sseLine({ type: 'metadata', threadId: resolvedThread.id })
-          )
+        streamOpen = safeEnqueue(controller, encoder.encode(sseLine({ type: 'metadata', threadId: resolvedThread.id })))
+        console.log(
+          '[Chat] stream done, persisted thread',
+          resolvedThread.id,
+          'messages:',
+          fullAssistantContent.length,
+          'chars',
         )
-        console.log('[Chat] stream done, persisted thread', resolvedThread.id, 'messages:', fullAssistantContent.length, 'chars')
-        controller.enqueue(encoder.encode(sseLine('[DONE]')))
+        if (streamOpen) safeEnqueue(controller, encoder.encode(sseLine('[DONE]')))
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Stream failed'
         console.error('[Chat] stream error', e)
-        controller.enqueue(
-          encoder.encode(sseLine({ type: 'error', error: { message } }))
-        )
+        try {
+          controller.enqueue(encoder.encode(sseLine({ type: 'error', error: { message } })))
+        } catch {
+          // Controller may already be closed (e.g. client disconnected)
+        }
       } finally {
-        controller.close()
+        try {
+          controller.close()
+        } catch {
+          // Already closed
+        }
       }
     },
   })

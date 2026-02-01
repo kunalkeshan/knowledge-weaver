@@ -35,10 +35,7 @@ function maskKey(key: string | undefined): string {
 }
 
 export function isWatsonConfigured(): boolean {
-  return Boolean(
-    (env.IBM_CLOUD_API_KEY || env.WATSON_CLOUD_API_KEY) &&
-      env.WATSON_INSTANCE_API_URL
-  )
+  return Boolean((env.IBM_CLOUD_API_KEY || env.WATSON_CLOUD_API_KEY) && env.WATSON_INSTANCE_API_URL)
 }
 
 if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'test') {

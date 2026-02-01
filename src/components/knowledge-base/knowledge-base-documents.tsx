@@ -57,8 +57,10 @@ export function KnowledgeBaseDocuments({
     )
   }
 
+  const documentsLabel = `${documents.length} document${documents.length !== 1 ? 's' : ''}`
+
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="min-w-0 overflow-hidden">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="min-w-0 w-full max-w-76 overflow-hidden">
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
@@ -66,30 +68,33 @@ export function KnowledgeBaseDocuments({
           className="h-6 min-w-0 w-full justify-start gap-1 overflow-hidden px-2 text-xs text-muted-foreground hover:text-foreground"
         >
           {isOpen ? (
-            <ChevronDown className="h-3 w-3" />
+            <ChevronDown className="h-3 w-3 shrink-0" />
           ) : (
-            <ChevronRight className="h-3 w-3" />
+            <ChevronRight className="h-3 w-3 shrink-0" />
           )}
-          {documents.length} document{documents.length !== 1 ? 's' : ''}
+          <span className="min-w-0 truncate" title={documentsLabel}>
+            {documentsLabel}
+          </span>
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="min-w-0 space-y-0.5 overflow-hidden pl-4">
+      <CollapsibleContent className="min-w-0 w-full max-w-full max-h-48 space-y-0.5 overflow-y-auto overflow-x-hidden pl-4">
+        <div className="min-w-0 w-full max-w-full overflow-hidden">
         {documents.map((doc) => {
           const id = doc.id ?? doc.name ?? ''
           const displayName = docDisplayName(doc)
           return (
             <div
               key={id}
-              className="group flex min-w-0 items-center gap-1.5 overflow-hidden rounded-sm py-0.5 pl-2 pr-1 text-xs hover:bg-muted"
+              className="group flex min-w-0 w-full max-w-full items-center gap-1.5 overflow-hidden rounded-sm py-0.5 pl-2 pr-1 text-xs hover:bg-muted"
             >
-              <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate" title={displayName}>
+              <FileText className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="min-w-0 flex-1 truncate overflow-hidden" title={displayName}>
                 {displayName}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100"
+                className="h-5 w-5 shrink-0 p-0 opacity-0 group-hover:opacity-100"
                 onClick={() => handleDeleteDocument(docIdForDelete(doc))}
                 disabled={deletingDoc === id}
               >
@@ -112,6 +117,7 @@ export function KnowledgeBaseDocuments({
             + Add documents
           </Button>
         )}
+        </div>
       </CollapsibleContent>
     </Collapsible>
   )

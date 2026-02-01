@@ -112,8 +112,8 @@ export function SidebarLeft(
                 {threads.slice(0, 20).map((thread) => {
                   const label = thread.firstUserMessage?.trim()
                     ? (thread.firstUserMessage.length > 48
-                        ? thread.firstUserMessage.slice(0, 48).trim() + '…'
-                        : thread.firstUserMessage)
+                      ? thread.firstUserMessage.slice(0, 48).trim() + '…'
+                      : thread.firstUserMessage)
                     : (thread.agentName ?? thread.agentId)
                   return (
                     <SidebarMenuItem key={thread.id}>

@@ -44,13 +44,13 @@ export default async function ChatPage({
     getWatsonAgent(agentId).catch(() => null),
     threadId
       ? prisma.chatThread
-          .findFirst({
-            where: { id: threadId, userId: session.user.id },
-            include: {
-              messages: { orderBy: { createdAt: 'asc' } },
-            },
-          })
-          .then((t) => t ?? null)
+        .findFirst({
+          where: { id: threadId, userId: session.user.id },
+          include: {
+            messages: { orderBy: { createdAt: 'asc' } },
+          },
+        })
+        .then((t) => t ?? null)
       : Promise.resolve(null),
   ])
 

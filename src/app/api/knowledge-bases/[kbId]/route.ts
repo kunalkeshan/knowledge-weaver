@@ -3,10 +3,7 @@ import { isWatsonConfigured } from '@/lib/config'
 import { deleteWatsonKnowledgeBase, getWatsonKnowledgeBaseWithDocuments } from '@/lib/watson'
 import { NextResponse } from 'next/server'
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ kbId: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ kbId: string }> }) {
   const session = await auth.api.getSession({
     headers: request.headers,
   })
@@ -29,10 +26,7 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ kbId: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ kbId: string }> }) {
   const session = await auth.api.getSession({
     headers: request.headers,
   })

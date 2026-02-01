@@ -4,10 +4,7 @@ import { getWatsonAgentFull, getWatsonKnowledgeBaseWithDocuments, updateWatsonAg
 import type { WatsonKnowledgeBase } from '@/types/watson'
 import { NextResponse } from 'next/server'
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ agentId: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ agentId: string }> }) {
   const session = await auth.api.getSession({
     headers: request.headers,
   })
@@ -40,10 +37,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ agentId: string }> }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ agentId: string }> }) {
   const session = await auth.api.getSession({
     headers: request.headers,
   })
@@ -79,7 +73,12 @@ export async function PATCH(
       newKnowledgeBase = agent.knowledge_base.filter((id) => id !== kbId)
     }
 
-    console.log('[API agents/knowledge-bases PATCH] Link step: agentId=%s, action=%s, kbId=%s', agentId, body.action, kbId)
+    console.log(
+      '[API agents/knowledge-bases PATCH] Link step: agentId=%s, action=%s, kbId=%s',
+      agentId,
+      body.action,
+      kbId,
+    )
     const updatedAgent = await updateWatsonAgent(agentId, { knowledge_base: newKnowledgeBase })
     console.log('[API agents/knowledge-bases PATCH] Link success: agentId=%s', agentId)
     return NextResponse.json({ agent: updatedAgent, knowledgeBaseIds: updatedAgent.knowledge_base })

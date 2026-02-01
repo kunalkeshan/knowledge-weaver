@@ -39,9 +39,7 @@ export function useKnowledgeBase(kbId: string | null) {
   })
 }
 
-async function fetchKnowledgeBaseStatus(
-  kbId: string
-): Promise<WatsonKnowledgeBaseStatusResponse | null> {
+async function fetchKnowledgeBaseStatus(kbId: string): Promise<WatsonKnowledgeBaseStatusResponse | null> {
   const res = await fetch(`/api/knowledge-bases/${kbId}/status`, { credentials: 'include' })
   if (res.status === 404) return null
   if (!res.ok) {
@@ -55,7 +53,7 @@ export function useKnowledgeBaseStatus(kbId: string | null, options?: { enabled?
   return useQuery({
     queryKey: ['knowledge-base-status', kbId],
     queryFn: () => fetchKnowledgeBaseStatus(kbId!),
-    enabled: !!kbId && (options?.enabled !== false),
+    enabled: !!kbId && options?.enabled !== false,
     refetchInterval: (query) => {
       const status = (query.state.data as WatsonKnowledgeBaseStatusResponse | undefined)?.built_in_index_status
       return status === 'processing' || status === 'not_ready' ? 5000 : false
@@ -64,7 +62,7 @@ export function useKnowledgeBaseStatus(kbId: string | null, options?: { enabled?
 }
 
 async function fetchAgentKnowledgeBases(
-  agentId: string
+  agentId: string,
 ): Promise<{ knowledgeBases: WatsonKnowledgeBase[]; knowledgeBaseIds: string[] }> {
   const res = await fetch(`/api/agents/${agentId}/knowledge-bases`, { credentials: 'include' })
   if (!res.ok) {

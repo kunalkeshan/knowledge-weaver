@@ -19,9 +19,7 @@ export interface ChatMessageRecord {
 }
 
 async function fetchThreads(agentId?: string): Promise<ChatThreadSummary[]> {
-  const url = agentId
-    ? `/api/chat/threads?agentId=${encodeURIComponent(agentId)}`
-    : '/api/chat/threads'
+  const url = agentId ? `/api/chat/threads?agentId=${encodeURIComponent(agentId)}` : '/api/chat/threads'
   const res = await fetch(url, { credentials: 'include' })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
@@ -48,13 +46,8 @@ export interface ThreadWithMessages {
   messages: ChatMessageRecord[]
 }
 
-async function fetchThreadMessages(
-  threadId: string
-): Promise<ThreadWithMessages | null> {
-  const res = await fetch(
-    `/api/chat/threads/${encodeURIComponent(threadId)}/messages`,
-    { credentials: 'include' }
-  )
+async function fetchThreadMessages(threadId: string): Promise<ThreadWithMessages | null> {
+  const res = await fetch(`/api/chat/threads/${encodeURIComponent(threadId)}/messages`, { credentials: 'include' })
   if (res.status === 404) return null
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))

@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { isWatsonConfigured } from '@/lib/config'
-import { getWatsonAgentFull, getWatsonKnowledgeBase, updateWatsonAgent } from '@/lib/watson'
+import { getWatsonAgentFull, getWatsonKnowledgeBaseWithDocuments, updateWatsonAgent } from '@/lib/watson'
 import type { WatsonKnowledgeBase } from '@/types/watson'
 import { NextResponse } from 'next/server'
 
@@ -24,10 +24,10 @@ export async function GET(
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
     }
 
-    // Fetch details for each linked knowledge base
+    // Fetch details for each linked knowledge base (with documents from /status)
     const knowledgeBases: WatsonKnowledgeBase[] = []
     for (const kbId of agent.knowledge_base) {
-      const kb = await getWatsonKnowledgeBase(kbId)
+      const kb = await getWatsonKnowledgeBaseWithDocuments(kbId)
       if (kb) {
         knowledgeBases.push(kb)
       }

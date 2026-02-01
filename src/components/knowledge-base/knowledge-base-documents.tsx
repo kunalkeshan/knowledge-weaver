@@ -26,14 +26,18 @@ export function KnowledgeBaseDocuments({
   const [deletingDoc, setDeletingDoc] = useState<string | null>(null)
   const deleteDocuments = useDeleteDocumentsFromKnowledgeBase()
 
-  const handleDeleteDocument = async (docName: string) => {
-    setDeletingDoc(docName)
+  const handleDeleteDocument = async (docIdOrName: string) => {
+    setDeletingDoc(docIdOrName)
     try {
-      await deleteDocuments.mutateAsync({ kbId, documentNames: [docName] })
+      await deleteDocuments.mutateAsync({ kbId, documentNames: [docIdOrName] })
     } finally {
       setDeletingDoc(null)
     }
   }
+
+  const docDisplayName = (doc: WatsonKnowledgeBaseDocument) =>
+    doc.metadata?.original_file_name ?? doc.name ?? doc.id ?? 'Document'
+  const docIdForDelete = (doc: WatsonKnowledgeBaseDocument) => doc.id ?? doc.name ?? ''
 
   if (documents.length === 0) {
     return (
@@ -70,30 +74,34 @@ export function KnowledgeBaseDocuments({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-0.5 pl-4">
-        {documents.map((doc) => (
-          <div
-            key={doc.name}
-            className="group flex items-center gap-1.5 rounded-sm py-0.5 pl-2 pr-1 text-xs hover:bg-muted"
-          >
-            <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
-            <span className="flex-1 truncate" title={doc.name}>
-              {doc.name}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100"
-              onClick={() => handleDeleteDocument(doc.name)}
-              disabled={deletingDoc === doc.name}
+        {documents.map((doc) => {
+          const id = doc.id ?? doc.name ?? ''
+          const displayName = docDisplayName(doc)
+          return (
+            <div
+              key={id}
+              className="group flex items-center gap-1.5 rounded-sm py-0.5 pl-2 pr-1 text-xs hover:bg-muted"
             >
-              {deletingDoc === doc.name ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-              )}
-            </Button>
-          </div>
-        ))}
+              <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+              <span className="flex-1 truncate" title={displayName}>
+                {displayName}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100"
+                onClick={() => handleDeleteDocument(docIdForDelete(doc))}
+                disabled={deletingDoc === id}
+              >
+                {deletingDoc === id ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                )}
+              </Button>
+            </div>
+          )
+        })}
         {onAddDocuments && (
           <Button
             variant="ghost"

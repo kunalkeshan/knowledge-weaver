@@ -71,12 +71,34 @@ export interface WatsonVectorIndex {
   embedding_model?: string
 }
 
-/** Document in a Knowledge Base */
+/** Document metadata from Watson Orchestrate /knowledge-bases/{id}/status */
+export interface WatsonKnowledgeBaseDocumentMetadata {
+  file_size?: number
+  original_file_name?: string
+  created_on?: string
+}
+
+/** Document in a Knowledge Base (from /status API: id + metadata) */
 export interface WatsonKnowledgeBaseDocument {
-  name: string
+  id?: string
+  name?: string
   size?: number
   type?: string
   status?: WatsonKnowledgeBaseStatus
+  /** From /status API */
+  metadata?: WatsonKnowledgeBaseDocumentMetadata
+}
+
+/** Response from GET /knowledge-bases/{id}/status (includes documents list) */
+export interface WatsonKnowledgeBaseStatusResponse {
+  id: string
+  name?: string
+  description?: string
+  prioritize_built_in_index?: boolean
+  ready?: boolean
+  built_in_index_status?: WatsonKnowledgeBaseStatus
+  built_in_index_status_msg?: string
+  documents?: WatsonKnowledgeBaseDocument[]
 }
 
 /** Knowledge Base from Watson Orchestrate */

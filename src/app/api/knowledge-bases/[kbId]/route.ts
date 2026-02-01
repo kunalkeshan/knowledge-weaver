@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { isWatsonConfigured } from '@/lib/config'
-import { deleteWatsonKnowledgeBase, getWatsonKnowledgeBase } from '@/lib/watson'
+import { deleteWatsonKnowledgeBase, getWatsonKnowledgeBaseWithDocuments } from '@/lib/watson'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -18,7 +18,7 @@ export async function GET(
   }
   const { kbId } = await params
   try {
-    const knowledgeBase = await getWatsonKnowledgeBase(kbId)
+    const knowledgeBase = await getWatsonKnowledgeBaseWithDocuments(kbId)
     if (!knowledgeBase) {
       return NextResponse.json({ error: 'Knowledge base not found' }, { status: 404 })
     }

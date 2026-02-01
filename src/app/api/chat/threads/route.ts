@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const agentId = searchParams.get('agentId') ?? undefined
   try {
-    const threads = await prisma.chatThread.findMany({
+    const rows = await prisma.chatThread.findMany({
       where: { userId: session.user.id, ...(agentId ? { agentId } : {}) },
       orderBy: { updatedAt: 'desc' },
       take: 50,
@@ -23,8 +23,13 @@ export async function GET(request: Request) {
         watsonThreadId: true,
         createdAt: true,
         updatedAt: true,
+        _count: { select: { messages: true } },
       },
     })
+    const threads = rows.map(({ _count, ...t }) => ({
+      ...t,
+      messageCount: _count.messages,
+    }))
     return NextResponse.json({ threads })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to list threads'

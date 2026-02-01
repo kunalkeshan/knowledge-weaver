@@ -41,11 +41,14 @@ interface SidebarRightProps extends React.ComponentProps<typeof Sidebar> {
   agentId?: string
 }
 
+const SIDEBAR_RIGHT_WIDTH = '22rem'
+
 export function SidebarRight({ user, agentId, ...props }: SidebarRightProps) {
   return (
     <Sidebar
       collapsible="none"
       className="sticky top-0 hidden h-svh border-l lg:flex"
+      style={{ '--sidebar-width': SIDEBAR_RIGHT_WIDTH } as React.CSSProperties}
       {...props}
     >
       <SidebarHeader className="h-16 border-b border-sidebar-border">

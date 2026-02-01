@@ -1,269 +1,102 @@
 'use client'
 
+import { useChatThreads } from '@/hooks/use-chat-history'
+import { MessageSquare } from 'lucide-react'
+import Link from 'next/link'
+
 import {
-  AudioWaveform,
-  Blocks,
-  Calendar,
-  Command,
-  Home,
-  Inbox,
-  MessageCircleQuestion,
-  Search,
-  Settings2,
-  Sparkles,
-  Trash2,
-} from 'lucide-react'
-import * as React from 'react'
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from '@/components/ui/sidebar'
 
-import { NavFavorites } from '@/components/dashboard/nav-favorites'
-import { NavMain } from '@/components/dashboard/nav-main'
-import { NavSecondary } from '@/components/dashboard/nav-secondary'
-import { NavWorkspaces } from '@/components/dashboard/nav-workspaces'
-import { TeamSwitcher } from '@/components/dashboard/team-switcher'
-import { Sidebar, SidebarContent, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
-
-// This is sample data.
-const data = {
-  teams: [
-    {
-      name: 'Acme Inc',
-      logo: Command,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free',
-    },
-  ],
-  navMain: [
-    {
-      title: 'Search',
-      url: '#',
-      icon: Search,
-    },
-    {
-      title: 'Ask AI',
-      url: '#',
-      icon: Sparkles,
-    },
-    {
-      title: 'Home',
-      url: '#',
-      icon: Home,
-      isActive: true,
-    },
-    {
-      title: 'Inbox',
-      url: '#',
-      icon: Inbox,
-      badge: '10',
-    },
-  ],
-  navSecondary: [
-    {
-      title: 'Calendar',
-      url: '#',
-      icon: Calendar,
-    },
-    {
-      title: 'Settings',
-      url: '#',
-      icon: Settings2,
-    },
-    {
-      title: 'Templates',
-      url: '#',
-      icon: Blocks,
-    },
-    {
-      title: 'Trash',
-      url: '#',
-      icon: Trash2,
-    },
-    {
-      title: 'Help',
-      url: '#',
-      icon: MessageCircleQuestion,
-    },
-  ],
-  favorites: [
-    {
-      name: 'Project Management & Task Tracking',
-      url: '#',
-      emoji: '📊',
-    },
-    {
-      name: 'Family Recipe Collection & Meal Planning',
-      url: '#',
-      emoji: '🍳',
-    },
-    {
-      name: 'Fitness Tracker & Workout Routines',
-      url: '#',
-      emoji: '💪',
-    },
-    {
-      name: 'Book Notes & Reading List',
-      url: '#',
-      emoji: '📚',
-    },
-    {
-      name: 'Sustainable Gardening Tips & Plant Care',
-      url: '#',
-      emoji: '🌱',
-    },
-    {
-      name: 'Language Learning Progress & Resources',
-      url: '#',
-      emoji: '🗣️',
-    },
-    {
-      name: 'Home Renovation Ideas & Budget Tracker',
-      url: '#',
-      emoji: '🏠',
-    },
-    {
-      name: 'Personal Finance & Investment Portfolio',
-      url: '#',
-      emoji: '💰',
-    },
-    {
-      name: 'Movie & TV Show Watchlist with Reviews',
-      url: '#',
-      emoji: '🎬',
-    },
-    {
-      name: 'Daily Habit Tracker & Goal Setting',
-      url: '#',
-      emoji: '✅',
-    },
-  ],
-  workspaces: [
-    {
-      name: 'Personal Life Management',
-      emoji: '🏠',
-      pages: [
-        {
-          name: 'Daily Journal & Reflection',
-          url: '#',
-          emoji: '📔',
-        },
-        {
-          name: 'Health & Wellness Tracker',
-          url: '#',
-          emoji: '🍏',
-        },
-        {
-          name: 'Personal Growth & Learning Goals',
-          url: '#',
-          emoji: '🌟',
-        },
-      ],
-    },
-    {
-      name: 'Professional Development',
-      emoji: '💼',
-      pages: [
-        {
-          name: 'Career Objectives & Milestones',
-          url: '#',
-          emoji: '🎯',
-        },
-        {
-          name: 'Skill Acquisition & Training Log',
-          url: '#',
-          emoji: '🧠',
-        },
-        {
-          name: 'Networking Contacts & Events',
-          url: '#',
-          emoji: '🤝',
-        },
-      ],
-    },
-    {
-      name: 'Creative Projects',
-      emoji: '🎨',
-      pages: [
-        {
-          name: 'Writing Ideas & Story Outlines',
-          url: '#',
-          emoji: '✍️',
-        },
-        {
-          name: 'Art & Design Portfolio',
-          url: '#',
-          emoji: '🖼️',
-        },
-        {
-          name: 'Music Composition & Practice Log',
-          url: '#',
-          emoji: '🎵',
-        },
-      ],
-    },
-    {
-      name: 'Home Management',
-      emoji: '🏡',
-      pages: [
-        {
-          name: 'Household Budget & Expense Tracking',
-          url: '#',
-          emoji: '💰',
-        },
-        {
-          name: 'Home Maintenance Schedule & Tasks',
-          url: '#',
-          emoji: '🔧',
-        },
-        {
-          name: 'Family Calendar & Event Planning',
-          url: '#',
-          emoji: '📅',
-        },
-      ],
-    },
-    {
-      name: 'Travel & Adventure',
-      emoji: '🧳',
-      pages: [
-        {
-          name: 'Trip Planning & Itineraries',
-          url: '#',
-          emoji: '🗺️',
-        },
-        {
-          name: 'Travel Bucket List & Inspiration',
-          url: '#',
-          emoji: '🌎',
-        },
-        {
-          name: 'Travel Journal & Photo Gallery',
-          url: '#',
-          emoji: '📸',
-        },
-      ],
-    },
-  ],
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60_000)
+  const diffHours = Math.floor(diffMs / 3_600_000)
+  const diffDays = Math.floor(diffMs / 86_400_000)
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString()
 }
 
-export function SidebarLeft({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function SidebarLeft(
+  props: React.ComponentProps<typeof Sidebar>
+) {
+  const { data: threads, isLoading, error } = useChatThreads()
+
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
-        <NavMain items={data.navMain} />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild size="lg">
+              <Link href="/dashboard">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <MessageSquare className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Dashboard</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Chats
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavFavorites favorites={data.favorites} />
-        <NavWorkspaces workspaces={data.workspaces} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <SidebarGroup>
+          <SidebarGroupLabel>Recent chats</SidebarGroupLabel>
+          <SidebarGroupContent>
+            {isLoading ? (
+              <SidebarMenu>
+                {[1, 2, 3, 4].map((i) => (
+                  <SidebarMenuItem key={i}>
+                    <div className="h-10 animate-pulse rounded-md bg-muted/50" />
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            ) : error ? (
+              <p className="px-2 py-2 text-xs text-muted-foreground">
+                Could not load chats.
+              </p>
+            ) : !threads?.length ? (
+              <p className="px-2 py-2 text-xs text-muted-foreground">
+                No conversations yet. Start a chat from the dashboard.
+              </p>
+            ) : (
+              <SidebarMenu>
+                {threads.slice(0, 20).map((thread) => (
+                  <SidebarMenuItem key={thread.id}>
+                    <SidebarMenuButton asChild tooltip={`${thread.agentName ?? thread.agentId} · ${formatRelativeTime(thread.updatedAt)}`}>
+                      <Link
+                        href={`/dashboard/agents/${thread.agentId}/chat?threadId=${encodeURIComponent(thread.id)}`}
+                      >
+                        <MessageSquare className="size-4 shrink-0" />
+                        <span className="truncate">
+                          {thread.agentName ?? thread.agentId}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            )}
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>

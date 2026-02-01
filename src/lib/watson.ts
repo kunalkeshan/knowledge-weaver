@@ -6,6 +6,7 @@ import type {
   WatsonAgentFull,
   WatsonKnowledgeBase,
   WatsonKnowledgeBaseStatus,
+  WatsonKnowledgeBaseStatusResponse,
   WatsonRunsRequestBody,
   WatsonRunsStreamChunk,
 } from '@/types/watson'
@@ -289,11 +290,11 @@ export async function getWatsonKnowledgeBase(kbId: string): Promise<WatsonKnowle
 }
 
 /**
- * Get knowledge base status
+ * Get knowledge base status (full response including documents from /status API)
  */
 export async function getWatsonKnowledgeBaseStatus(
   kbId: string
-): Promise<{ status: WatsonKnowledgeBaseStatus; status_msg?: string } | null> {
+): Promise<WatsonKnowledgeBaseStatusResponse | null> {
   const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
   if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
   const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}/status`
@@ -306,7 +307,27 @@ export async function getWatsonKnowledgeBaseStatus(
     console.error('[Watson] getWatsonKnowledgeBaseStatus failed', res.status, text)
     throw new Error(`Get knowledge base status failed: ${res.status} ${text}`)
   }
-  return (await res.json()) as { status: WatsonKnowledgeBaseStatus; status_msg?: string }
+  return (await res.json()) as WatsonKnowledgeBaseStatusResponse
+}
+
+/**
+ * Get knowledge base with documents merged from /status API (so documents list is populated).
+ */
+export async function getWatsonKnowledgeBaseWithDocuments(
+  kbId: string
+): Promise<WatsonKnowledgeBase | null> {
+  const kb = await getWatsonKnowledgeBase(kbId)
+  if (!kb) return null
+  const status = await getWatsonKnowledgeBaseStatus(kbId)
+  if (!status) return kb
+  return {
+    ...kb,
+    documents: status.documents ?? kb.documents ?? [],
+    vector_index: kb.vector_index ?? (status.built_in_index_status && {
+      status: status.built_in_index_status,
+      status_msg: status.built_in_index_status_msg,
+    }),
+  }
 }
 
 /** File-like value: either a Web API File or buffer + metadata (for Node when re-forwarding uploads). */
@@ -391,9 +412,10 @@ export async function createWatsonKnowledgeBase(
 
 /**
  * Add documents to existing knowledge base (supports File or buffer+name+type for Node).
- * Tries PATCH first (works on many Watson cloud instances); if that fails, retries with PUT.
- * Watson may return 400 for unsupported types (e.g. text/markdown) or 500 for "ongoing update" / server errors.
- * Logs file names and MIME types to help debug "Unsupported file type" or "Failed to add documents" errors.
+ * Uses PUT first (Ingest additional documents) so new files are added without replacing existing ones.
+ * Falls back to PATCH only if PUT is not supported on the instance.
+ * @see https://developer.watson-orchestrate.ibm.com/apis/knowledge-bases/ingest-additional-documents-into-a-knowledge-base
+ * @see https://developer.watson-orchestrate.ibm.com/apis/knowledge-bases/patch-a-knowledge-base-by-uploading-documents-or-providing-a-external-vector-index
  */
 export async function addDocumentsToKnowledgeBase(
   kbId: string,
@@ -414,7 +436,8 @@ export async function addDocumentsToKnowledgeBase(
     ...(headers['IAM-API_KEY'] ? { 'IAM-API_KEY': headers['IAM-API_KEY'] } : {}),
   }
 
-  function buildFormDataFilesOnly(): FormData {
+  /** PUT Ingest additional documents: multipart with files only (kb id in path). */
+  function buildFormDataPUT(): FormData {
     const formData = new FormData()
     for (const file of files) {
       if (file instanceof File) {
@@ -427,6 +450,7 @@ export async function addDocumentsToKnowledgeBase(
     return formData
   }
 
+  /** PATCH: multipart with knowledge_base JSON + files. */
   function buildFormDataPATCH(): FormData {
     const formData = new FormData()
     formData.append('knowledge_base', JSON.stringify({ id: kbId }))
@@ -457,30 +481,30 @@ export async function addDocumentsToKnowledgeBase(
     `Add documents failed: ${status} ${text.includes('detail') ? text : status}. ` +
     'Watson may reject some file types or fail on large/PDF files. Try a smaller or text-based file, or create/upload via the IBM watsonx Orchestrate UI; if it persists, contact IBM support.'
 
-  // Try PATCH first (succeeds on many Watson cloud instances where PUT returns 500)
-  console.log('[Watson] addDocumentsToKnowledgeBase: PATCH', url, { fileCount: files.length, files: fileInfos })
+  // Prefer PUT (Ingest additional documents) so we add files without replacing existing ones
+  console.log('[Watson] addDocumentsToKnowledgeBase: PUT (ingest)', url, { fileCount: files.length, files: fileInfos })
   let res = await fetch(url, {
+    method: 'PUT',
+    headers: authHeaders,
+    body: buildFormDataPUT(),
+  })
+  if (res.ok) return (await res.json()) as WatsonKnowledgeBase
+  const textPut = await res.text()
+  logFailure('PUT', res.status, textPut)
+  let lastStatus = res.status
+  let lastText = textPut
+
+  // Fallback: PATCH (if PUT not supported on this instance)
+  console.log('[Watson] addDocumentsToKnowledgeBase: fallback PATCH', url)
+  res = await fetch(url, {
     method: 'PATCH',
     headers: authHeaders,
     body: buildFormDataPATCH(),
   })
   if (res.ok) return (await res.json()) as WatsonKnowledgeBase
-  const textPatch = await res.text()
-  logFailure('PATCH', res.status, textPatch)
-  let lastStatus = res.status
-  let lastText = textPatch
-
-  // Fallback: PUT (Ingest Additional Documents)
-  console.log('[Watson] addDocumentsToKnowledgeBase: retry PUT', url)
-  res = await fetch(url, {
-    method: 'PUT',
-    headers: authHeaders,
-    body: buildFormDataFilesOnly(),
-  })
-  if (res.ok) return (await res.json()) as WatsonKnowledgeBase
   lastStatus = res.status
   lastText = await res.text()
-  logFailure('PUT', lastStatus, lastText)
+  logFailure('PATCH', lastStatus, lastText)
 
   throw new Error(makeHelpfulMessage(lastStatus, lastText))
 }

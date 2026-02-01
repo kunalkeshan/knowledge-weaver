@@ -22,14 +22,14 @@ export function KnowledgeBaseItem({
   const [isUnlinking, setIsUnlinking] = useState(false)
   const unlink = useUnlinkKnowledgeBase()
 
-  // Poll status if processing
+  // Poll status if processing (status API returns built_in_index_status and documents)
   const { data: statusData } = useKnowledgeBaseStatus(knowledgeBase.id, {
     enabled: knowledgeBase.vector_index?.status === 'processing' ||
       knowledgeBase.vector_index?.status === 'not_ready',
   })
 
-  const status = statusData?.status ?? knowledgeBase.vector_index?.status ?? 'not_ready'
-  const statusMsg = statusData?.status_msg ?? knowledgeBase.vector_index?.status_msg
+  const status = statusData?.built_in_index_status ?? knowledgeBase.vector_index?.status ?? 'not_ready'
+  const statusMsg = statusData?.built_in_index_status_msg ?? knowledgeBase.vector_index?.status_msg
 
   const handleUnlink = async () => {
     setIsUnlinking(true)

@@ -13,8 +13,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { Bot, BookOpen, FileStack, Sparkles } from 'lucide-react'
+import { Bot, BookOpen, FileStack, MessageSquare, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { RecentChats } from '@/components/dashboard/recent-chats'
 
 interface DashboardContentProps {
   user: {
@@ -121,6 +122,14 @@ export function DashboardContent({ user }: DashboardContentProps) {
               AI Agents
             </h3>
             <AgentGrid />
+          </div>
+
+          <div className="rounded-xl border bg-muted/30 p-4">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <MessageSquare className="h-4 w-4" />
+              Recent chats
+            </h3>
+            <RecentChats />
           </div>
 
           <div className="rounded-xl border bg-muted/30 p-4">

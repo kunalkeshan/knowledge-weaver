@@ -7,6 +7,7 @@ export interface ChatThreadSummary {
   watsonThreadId: string | null
   createdAt: string
   updatedAt: string
+  messageCount?: number
 }
 
 export interface ChatMessageRecord {

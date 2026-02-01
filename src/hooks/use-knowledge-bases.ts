@@ -1,4 +1,4 @@
-import type { WatsonKnowledgeBase, WatsonKnowledgeBaseStatus } from '@/types/watson'
+import type { WatsonKnowledgeBase, WatsonKnowledgeBaseStatusResponse } from '@/types/watson'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 // ==================== Queries ====================
@@ -41,7 +41,7 @@ export function useKnowledgeBase(kbId: string | null) {
 
 async function fetchKnowledgeBaseStatus(
   kbId: string
-): Promise<{ status: WatsonKnowledgeBaseStatus; status_msg?: string } | null> {
+): Promise<WatsonKnowledgeBaseStatusResponse | null> {
   const res = await fetch(`/api/knowledge-bases/${kbId}/status`, { credentials: 'include' })
   if (res.status === 404) return null
   if (!res.ok) {
@@ -57,8 +57,7 @@ export function useKnowledgeBaseStatus(kbId: string | null, options?: { enabled?
     queryFn: () => fetchKnowledgeBaseStatus(kbId!),
     enabled: !!kbId && (options?.enabled !== false),
     refetchInterval: (query) => {
-      // Poll every 5 seconds if status is processing
-      const status = query.state.data?.status
+      const status = (query.state.data as WatsonKnowledgeBaseStatusResponse | undefined)?.built_in_index_status
       return status === 'processing' || status === 'not_ready' ? 5000 : false
     },
   })
@@ -122,6 +121,7 @@ export function useCreateKnowledgeBase() {
     mutationFn: createKnowledgeBase,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['knowledge-bases'] })
+      queryClient.invalidateQueries({ queryKey: ['agent-knowledge-bases'] })
     },
   })
 }
@@ -177,7 +177,9 @@ export function useAddDocumentsToKnowledgeBase() {
   return useMutation({
     mutationFn: addDocuments,
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['knowledge-bases'] })
       queryClient.invalidateQueries({ queryKey: ['knowledge-base', variables.kbId] })
+      queryClient.invalidateQueries({ queryKey: ['knowledge-base-status', variables.kbId] })
       queryClient.invalidateQueries({ queryKey: ['agent-knowledge-bases'] })
     },
   })
@@ -206,7 +208,9 @@ export function useDeleteDocumentsFromKnowledgeBase() {
   return useMutation({
     mutationFn: deleteDocuments,
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['knowledge-bases'] })
       queryClient.invalidateQueries({ queryKey: ['knowledge-base', variables.kbId] })
+      queryClient.invalidateQueries({ queryKey: ['knowledge-base-status', variables.kbId] })
       queryClient.invalidateQueries({ queryKey: ['agent-knowledge-bases'] })
     },
   })

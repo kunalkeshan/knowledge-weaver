@@ -10,6 +10,8 @@ import { ChevronIcon } from '@/components/icons/chevron-icon'
 import { CallToActionSimple } from '@/components/sections/call-to-action-simple'
 import { FAQsTwoColumnAccordion, Faq } from '@/components/sections/faqs-two-column-accordion'
 import { Feature, FeaturesTwoColumnWithDemos } from '@/components/sections/features-two-column-with-demos'
+import { CallToActionAuthCta } from '@/components/sections/call-to-action-auth-cta'
+import { HeroAuthCta } from '@/components/sections/hero-auth-cta'
 import { HeroLeftAlignedWithDemo } from '@/components/sections/hero-left-aligned-with-demo'
 import { Plan, PricingMultiTier } from '@/components/sections/pricing-multi-tier'
 import { Stat, StatsWithGraph } from '@/components/sections/stats-with-graph'
@@ -29,17 +31,7 @@ export default function Page() {
             process how-tos, and troubleshooting — grounded in your actual content.
           </p>
         }
-        cta={
-          <div className="flex items-center gap-4">
-            <ButtonLink href="#" size="lg">
-              Get started
-            </ButtonLink>
-
-            <PlainButtonLink href="#" size="lg">
-              See how it works <ArrowNarrowRightIcon />
-            </PlainButtonLink>
-          </div>
-        }
+        cta={<HeroAuthCta />}
         demo={
           <>
             <Screenshot className="rounded-md lg:hidden" wallpaper="green" placement="bottom-right">
@@ -589,17 +581,7 @@ export default function Page() {
             back to the original content.
           </p>
         }
-        cta={
-          <div className="flex items-center gap-4">
-            <ButtonLink href="#" size="lg">
-              Get started
-            </ButtonLink>
-
-            <PlainButtonLink href="#" size="lg">
-              Book a demo <ChevronIcon />
-            </PlainButtonLink>
-          </div>
-        }
+        cta={<CallToActionAuthCta />}
       />
     </>
   )

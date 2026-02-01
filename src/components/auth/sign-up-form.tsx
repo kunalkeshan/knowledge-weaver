@@ -1,20 +1,33 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authClient } from '@/lib/auth-client'
+import { getAuthErrorMessage } from '@/lib/auth-errors'
 
 export function SignUpForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const errorCode = searchParams.get('error')
+    if (errorCode) {
+      setError(getAuthErrorMessage(errorCode))
+      // Clean URL after displaying error
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.history.replaceState({}, '', url.pathname)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,7 +95,9 @@ export function SignUpForm() {
         />
       </div>
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <div className="rounded-md bg-destructive/10 p-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
       )}
       <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
         {isLoading ? (

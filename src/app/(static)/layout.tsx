@@ -1,6 +1,5 @@
 import Image from 'next/image'
 
-import { ButtonLink, PlainButtonLink } from '@/components/elements/button'
 import { GitHubIcon } from '@/components/icons/social/github-icon'
 import { XIcon } from '@/components/icons/social/x-icon'
 import { YouTubeIcon } from '@/components/icons/social/youtube-icon'
@@ -11,6 +10,7 @@ import {
   NewsletterForm,
   SocialLink,
 } from '@/components/sections/footer-with-newsletter-form-categories-and-social-icons'
+import { NavbarAuthActions } from '@/components/sections/navbar-auth-actions'
 import {
   NavbarLink,
   NavbarLogo,
@@ -27,7 +27,7 @@ export default function StaticLayout({ children }: { children: React.ReactNode }
             <NavbarLink href="/pricing">Pricing</NavbarLink>
             <NavbarLink href="/about">About</NavbarLink>
             <NavbarLink href="#">Docs</NavbarLink>
-            <NavbarLink href="#" className="sm:hidden">
+            <NavbarLink href="/login" className="sm:hidden">
               Log in
             </NavbarLink>
           </>
@@ -50,14 +50,7 @@ export default function StaticLayout({ children }: { children: React.ReactNode }
             />
           </NavbarLogo>
         }
-        actions={
-          <>
-            <PlainButtonLink href="#" className="max-sm:hidden">
-              Log in
-            </PlainButtonLink>
-            <ButtonLink href="#">Get started</ButtonLink>
-          </>
-        }
+        actions={<NavbarAuthActions />}
       />
       <section>{children}</section>
       <FooterWithNewsletterFormCategoriesAndSocialIcons

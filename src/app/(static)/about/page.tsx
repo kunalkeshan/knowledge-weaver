@@ -90,8 +90,8 @@ export default function Page() {
               height={1000}
             />
           }
-          name="Leslie Alexander"
-          byline="Co-Founder / CEO"
+          name="Phuong Ngoc Linh Tran"
+          byline="Team Lead"
         />
         <TeamMember
           img={
@@ -103,8 +103,8 @@ export default function Page() {
               height={1000}
             />
           }
-          name="Michael Foster"
-          byline="Co-Founder / CTO"
+          name="Adithiyan R"
+          byline="General Member"
         />
         <TeamMember
           img={
@@ -116,8 +116,8 @@ export default function Page() {
               height={1000}
             />
           }
-          name="Dries Vincent"
-          byline="Business Relations"
+          name="Surendar Pd"
+          byline="General Member"
         />
         <TeamMember
           img={
@@ -129,60 +129,8 @@ export default function Page() {
               height={1000}
             />
           }
-          name="Lindsay Walton"
-          byline="Front-end Developer"
-        />
-        <TeamMember
-          img={
-            <Image
-              src="/img/avatars/5-h-1000-w-800.webp"
-              alt=""
-              className="not-dark:bg-white/75 dark:bg-black/75"
-              width={800}
-              height={1000}
-            />
-          }
-          name="Noor Hasan"
-          byline="Designer"
-        />
-        <TeamMember
-          img={
-            <Image
-              src="/img/avatars/6-h-1000-w-800.webp"
-              alt=""
-              className="not-dark:bg-white/75 dark:bg-black/75"
-              width={800}
-              height={1000}
-            />
-          }
-          name="Tom Cook"
-          byline="Director of Product"
-        />
-        <TeamMember
-          img={
-            <Image
-              src="/img/avatars/8-h-1000-w-800.webp"
-              alt=""
-              className="not-dark:bg-white/75 dark:bg-black/75"
-              width={800}
-              height={1000}
-            />
-          }
-          name="Whitney Francis"
-          byline="Copywriter"
-        />
-        <TeamMember
-          img={
-            <Image
-              src="/img/avatars/3-h-1000-w-800.webp"
-              alt=""
-              className="not-dark:bg-white/75 dark:bg-black/75"
-              width={800}
-              height={1000}
-            />
-          }
-          name="Leonard Wu"
-          byline="Senior Designer"
+          name="Kunal Keshan"
+          byline="General Member"
         />
       </TeamFourColumnGrid>
       {/* Call To Action */}

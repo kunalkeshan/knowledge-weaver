@@ -1,6 +1,9 @@
 'use client'
 
+import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { authClient } from '@/lib/auth-client'
 
 const GoogleIcon = (props: React.ComponentProps<'svg'>) => (
   <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
@@ -10,10 +13,27 @@ const GoogleIcon = (props: React.ComponentProps<'svg'>) => (
   </svg>
 )
 
-export function GoogleOAuthButton() {
-  const handleClick = () => {
-    // Placeholder for future Google OAuth implementation
-    console.log('Google OAuth not yet implemented')
+interface GoogleOAuthButtonProps {
+  errorCallbackURL?: string
+}
+
+export function GoogleOAuthButton({
+  errorCallbackURL,
+}: GoogleOAuthButtonProps) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleClick = async () => {
+    setIsLoading(true)
+
+    try {
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/dashboard',
+        errorCallbackURL,
+      })
+    } catch {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -23,9 +43,19 @@ export function GoogleOAuthButton() {
       type="button"
       variant="outline"
       onClick={handleClick}
+      disabled={isLoading}
     >
-      <GoogleIcon className="mr-2 h-4 w-4" />
-      Continue with Google
+      {isLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Connecting...
+        </>
+      ) : (
+        <>
+          <GoogleIcon className="mr-2 h-4 w-4" />
+          Continue with Google
+        </>
+      )}
     </Button>
   )
 }

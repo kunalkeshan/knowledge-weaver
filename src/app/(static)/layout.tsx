@@ -1,5 +1,3 @@
-import Image from 'next/image'
-
 import { GitHubIcon } from '@/components/icons/social/github-icon'
 import { XIcon } from '@/components/icons/social/x-icon'
 import { YouTubeIcon } from '@/components/icons/social/youtube-icon'
@@ -33,21 +31,8 @@ export default function StaticLayout({ children }: { children: React.ReactNode }
           </>
         }
         logo={
-          <NavbarLogo href="/">
-            <Image
-              src="/img/logos/oatmeal-mona-color-olive-950.svg"
-              alt="Community Knowledge Weaver"
-              className="dark:hidden"
-              width={113}
-              height={28}
-            />
-            <Image
-              src="/img/logos/oatmeal-mona-color-white.svg"
-              alt="Community Knowledge Weaver"
-              className="not-dark:hidden"
-              width={113}
-              height={28}
-            />
+          <NavbarLogo href="/" className="font-sans text-xl font-semibold text-olive-950 dark:text-white">
+            knowledge weaver
           </NavbarLogo>
         }
         actions={<NavbarAuthActions />}

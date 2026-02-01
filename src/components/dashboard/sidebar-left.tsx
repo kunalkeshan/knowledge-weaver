@@ -4,9 +4,11 @@ import { useChatThreads } from '@/hooks/use-chat-history'
 import { FolderKanban, MessageSquare, Search } from 'lucide-react'
 import Link from 'next/link'
 
+import { GitHubIcon } from '@/components/icons/social/github-icon'
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -135,6 +137,18 @@ export function SidebarLeft(
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="mt-auto">
+        <a
+          href="https://github.com/kunalkeshan/knowledge-weaver"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View repository on GitHub"
+          className="inline-flex items-center gap-2 rounded-md p-2 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <GitHubIcon className="size-5 shrink-0" />
+          <span className="truncate text-sm group-data-[collapsible=icon]:hidden">GitHub</span>
+        </a>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

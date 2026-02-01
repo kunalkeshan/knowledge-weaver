@@ -51,15 +51,21 @@ export function RecentChats() {
 
   return (
     <ul className="space-y-1">
-      {threads.slice(0, 10).map((thread) => (
-        <li key={thread.id}>
-          <Link
-            href={`/dashboard/agents/${thread.agentId}/chat?threadId=${encodeURIComponent(thread.id)}`}
-            className="flex flex-col gap-0.5 rounded-lg border border-transparent px-3 py-2 text-left transition-colors hover:border-sidebar-border hover:bg-sidebar-accent/50"
-          >
-            <span className="truncate text-sm font-medium">
-              {thread.agentName ?? thread.agentId}
-            </span>
+      {threads.slice(0, 10).map((thread) => {
+        const label = thread.firstUserMessage?.trim()
+          ? (thread.firstUserMessage.length > 56
+              ? thread.firstUserMessage.slice(0, 56).trim() + '…'
+              : thread.firstUserMessage)
+          : (thread.agentName ?? thread.agentId)
+        return (
+          <li key={thread.id}>
+            <Link
+              href={`/dashboard/agents/${thread.agentId}/chat?threadId=${encodeURIComponent(thread.id)}`}
+              className="flex flex-col gap-0.5 rounded-lg border border-transparent px-3 py-2 text-left transition-colors hover:border-sidebar-border hover:bg-sidebar-accent/50"
+            >
+              <span className="truncate text-sm font-medium">
+                {label}
+              </span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               {thread.messageCount != null && (
                 <>
@@ -68,10 +74,11 @@ export function RecentChats() {
                 </>
               )}
               {formatRelativeTime(thread.updatedAt)}
-            </span>
-          </Link>
-        </li>
-      ))}
+              </span>
+            </Link>
+          </li>
+        )
+      })}
     </ul>
   )
 }

@@ -24,11 +24,18 @@ export async function GET(request: Request) {
         createdAt: true,
         updatedAt: true,
         _count: { select: { messages: true } },
+        messages: {
+          where: { role: 'user' },
+          orderBy: { createdAt: 'asc' },
+          take: 1,
+          select: { content: true },
+        },
       },
     })
-    const threads = rows.map(({ _count, ...t }) => ({
+    const threads = rows.map(({ messages, _count, ...t }) => ({
       ...t,
       messageCount: _count.messages,
+      firstUserMessage: messages[0]?.content ?? null,
     }))
     return NextResponse.json({ threads })
   } catch (e) {

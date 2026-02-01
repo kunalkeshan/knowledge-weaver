@@ -12,6 +12,8 @@ interface ChatInterfaceProps {
   threadId: string | null
   onThreadIdChange?: (threadId: string | null) => void
   initialMessages?: Array<{ role: 'user' | 'assistant'; content: string }>
+  prefillMessage?: string
+  highRisk?: boolean
 }
 
 function uiMessagesFromHistory(
@@ -30,6 +32,8 @@ export function ChatInterface({
   threadId,
   onThreadIdChange,
   initialMessages = [],
+  prefillMessage,
+  highRisk,
 }: ChatInterfaceProps) {
   const queryClient = useQueryClient()
   const body = useMemo(
@@ -37,8 +41,9 @@ export function ChatInterface({
       agentId,
       threadId: threadId ?? undefined,
       agentName: agentName ?? undefined,
+      highRisk: highRisk ?? undefined,
     }),
-    [agentId, threadId, agentName]
+    [agentId, threadId, agentName, highRisk]
   )
 
   const initial = useMemo(
@@ -110,7 +115,7 @@ export function ChatInterface({
         )}
       </div>
       <div className="border-t bg-background p-3">
-        <ChatInput onSend={sendMessage} disabled={isLoading} />
+        <ChatInput onSend={sendMessage} disabled={isLoading} initialValue={prefillMessage} />
       </div>
     </div>
   )

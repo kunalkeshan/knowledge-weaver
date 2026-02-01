@@ -1,8 +1,13 @@
 import { auth } from '@/lib/auth'
 import { isWatsonConfigured } from '@/lib/config'
 import { prisma } from '@/lib/prisma'
-import { streamWatsonChat } from '@/lib/watson'
-import type { WatsonRunsRequestBody } from '@/types/watson'
+import {
+  getAgentDocumentDisplayMap,
+  getWatsonAgentFull,
+  listWatsonAgents,
+  streamWatsonChat,
+} from '@/lib/watson'
+import type { WatsonRunsRequestBody, WatsonStreamSource } from '@/types/watson'
 import { NextResponse } from 'next/server'
 
 // AG-UI protocol: TanStack AI expects these event types and fields (see @tanstack/ai types)
@@ -41,7 +46,8 @@ export async function POST(request: Request) {
     agentId?: string
     threadId?: string
     agentName?: string
-    data?: { agentId?: string; threadId?: string; agentName?: string }
+    highRisk?: boolean
+    data?: { agentId?: string; threadId?: string; agentName?: string; highRisk?: boolean }
   }
   try {
     body = await request.json()
@@ -63,6 +69,7 @@ export async function POST(request: Request) {
   const agentId = body.agentId ?? body.data?.agentId
   const dbThreadId = body.threadId ?? body.data?.threadId
   const agentName = body.agentName ?? body.data?.agentName
+  const highRisk = body.highRisk ?? body.data?.highRisk ?? false
   const messages = body.messages ?? []
 
   if (!agentId) {
@@ -140,6 +147,9 @@ export async function POST(request: Request) {
 
   const encoder = new TextEncoder()
   let fullAssistantContent = ''
+  const collectedSources: WatsonStreamSource[] = []
+  const agentFull = await getWatsonAgentFull(agentId).catch(() => null)
+  const hasKnowledgeBase = (agentFull?.knowledge_base?.length ?? 0) > 0
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -179,9 +189,98 @@ export async function POST(request: Request) {
                 })
               )
             )
+          } else if (chunk.type === 'sources' && chunk.sources?.length) {
+            collectedSources.push(...chunk.sources)
           } else if (chunk.type === 'done') {
             if (chunk.threadId) watsonThreadId = chunk.threadId
           }
+        }
+
+        if (highRisk && fullAssistantContent) {
+          const agents = await listWatsonAgents()
+          const verifier = agents.find((a) => (a.name as string) === 'Response Verifier')
+          if (verifier) {
+            const verifierPrompt = `User asked: ${userContent}\n\nPrimary answer: ${fullAssistantContent}\n\nVerify this answer for accuracy and policy compliance. Respond with VERIFIED or with a short correction/summary.`
+            let verifierContent = ''
+            for await (const chunk of streamWatsonChat({
+              message: { role: 'user', content: verifierPrompt },
+              agent_id: verifier.agent_id,
+            })) {
+              if (chunk.type === 'content' && chunk.content) verifierContent += chunk.content
+            }
+            if (verifierContent.trim()) {
+              const verificationBlock = `\n\n---\n\n**Verification:** ${verifierContent.trim()}`
+              fullAssistantContent += verificationBlock
+              controller.enqueue(
+                encoder.encode(
+                  sseLine({
+                    type: 'TEXT_MESSAGE_CONTENT',
+                    messageId: MESSAGE_ID,
+                    delta: verificationBlock,
+                    content: fullAssistantContent,
+                    timestamp: ts(),
+                  })
+                )
+              )
+            }
+          }
+        }
+
+        // Append knowledge-base verification: resolve document IDs using same /status API as right sidebar
+        const docDisplayMap = await getAgentDocumentDisplayMap(
+          agentFull?.knowledge_base ?? []
+        )
+        const seenIds = new Set<string>()
+        const uniqueSources = collectedSources.filter((s) => {
+          const id = s.id ?? s.title ?? s.name ?? s.file_name ?? ''
+          if (id && seenIds.has(id)) return false
+          if (id) seenIds.add(id)
+          return true
+        })
+        if (uniqueSources.length > 0) {
+          const sourceLabel = '\n\n---\n\n**Sources (from knowledge base):**\n'
+          const sourceList = uniqueSources
+            .map((s) => {
+              const resolved = s.id ? docDisplayMap.get(s.id) : undefined
+              const label =
+                resolved?.displayName ??
+                s.title ??
+                s.name ??
+                s.file_name ??
+                s.id ??
+                'Document'
+              if (resolved?.url) return `- [${label}](${resolved.url})`
+              return `- ${label}`
+            })
+            .join('\n')
+          const verificationBlock = sourceLabel + sourceList
+          fullAssistantContent += verificationBlock
+          controller.enqueue(
+            encoder.encode(
+              sseLine({
+                type: 'TEXT_MESSAGE_CONTENT',
+                messageId: MESSAGE_ID,
+                delta: verificationBlock,
+                content: fullAssistantContent,
+                timestamp: ts(),
+              })
+            )
+          )
+        } else if (hasKnowledgeBase) {
+          const verificationBlock =
+            "\n\n---\n\n*This answer was generated using this agent's linked knowledge base. You can see and manage sources in the right sidebar.*"
+          fullAssistantContent += verificationBlock
+          controller.enqueue(
+            encoder.encode(
+              sseLine({
+                type: 'TEXT_MESSAGE_CONTENT',
+                messageId: MESSAGE_ID,
+                delta: verificationBlock,
+                content: fullAssistantContent,
+                timestamp: ts(),
+              })
+            )
+          )
         }
 
         // AG-UI: end message and run

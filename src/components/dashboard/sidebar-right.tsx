@@ -47,7 +47,7 @@ export function SidebarRight({ user, agentId, ...props }: SidebarRightProps) {
   return (
     <Sidebar
       collapsible="none"
-      className="sticky top-0 hidden h-svh border-l lg:flex"
+      className="sticky top-0 hidden h-svh max-w-(--sidebar-width) overflow-x-hidden border-l lg:flex"
       style={{ '--sidebar-width': SIDEBAR_RIGHT_WIDTH } as React.CSSProperties}
       {...props}
     >
@@ -55,7 +55,7 @@ export function SidebarRight({ user, agentId, ...props }: SidebarRightProps) {
         <NavUser user={user} />
       </SidebarHeader>
       {agentId ? (
-        <SidebarContent className="p-0">
+        <SidebarContent className="flex min-h-0 min-w-0 flex-col overflow-hidden p-0">
           <AgentKnowledgeBaseSidebar agentId={agentId} />
         </SidebarContent>
       ) : (

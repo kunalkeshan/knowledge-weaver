@@ -1,6 +1,9 @@
 {
   "name": "oatmeal-demo",
   "version": "0.0.1",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

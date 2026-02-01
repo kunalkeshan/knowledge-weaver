@@ -9,14 +9,16 @@ interface ChatInputProps {
   onSend: (content: string) => void
   disabled?: boolean
   placeholder?: string
+  initialValue?: string
 }
 
 export function ChatInput({
   onSend,
   disabled,
   placeholder = 'Type a message...',
+  initialValue = '',
 }: ChatInputProps) {
-  const [value, setValue] = useState('')
+  const [value, setValue] = useState(initialValue)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = (e: React.FormEvent) => {

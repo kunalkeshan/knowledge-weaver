@@ -19,6 +19,10 @@ model User {
   sessions      Session[]
   accounts      Account[]
   chatThreads   ChatThread[]
+  projects      Project[]    @relation("ProjectCreatedBy")
+  ticketsAssigned Ticket[]   @relation("TicketAssignee")
+  notes         Note[]      @relation("NoteCreatedBy")
+  policies      Policy[]    @relation("PolicyCreatedBy")
 
   @@unique([email])
   @@map("user")
@@ -98,4 +102,74 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?   @db.Text
+  whereHosted String?   @db.Text
+  status      String    @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  createdBy   User?     @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  tickets     Ticket[]
+  notes       Note[]
+
+  @@index([createdById])
+  @@index([status])
+  @@map("project")
+}
+
+model Ticket {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?   @db.Text
+  status      String    @default("open")
+  kind        String    @default("task")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assigneeId  String?
+  assignee    User?     @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([status])
+  @@index([assigneeId])
+  @@map("ticket")
+}
+
+model Note {
+  id          String    @id @default(cuid())
+  title       String
+  content     String    @db.Text
+  tag         String?
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  createdBy   User?     @relation("NoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([tag])
+  @@map("note")
+}
+
+model Policy {
+  id          String    @id @default(cuid())
+  title       String
+  content     String    @db.Text
+  category    String
+  effectiveAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
+  createdBy   User?     @relation("PolicyCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@map("policy")
 }

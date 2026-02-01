@@ -4,6 +4,26 @@ import ReactMarkdown from 'react-markdown'
 import rehypeSlug from 'rehype-slug'
 import remarkGfm from 'remark-gfm'
 
+/** Collapse 3+ newlines to 2 so AI output doesn't create huge vertical gaps */
+function normalizeMarkdownSpacing(content: string): string {
+  return content.replace(/\n{3,}/g, '\n\n').trim()
+}
+
+const assistantProseClass = cn(
+  'prose prose-sm max-w-none dark:prose-invert',
+  // Tighter vertical spacing for chat
+  '[&>*:first-child]:mt-0 [&>*:last-child]:mb-0',
+  '[&_p]:my-1.5 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0',
+  '[&_ul]:my-1.5 [&_ol]:my-1.5 [&_ul]:pl-5 [&_ol]:pl-5',
+  '[&_li]:my-0.5 [&_li>:first-child]:mt-0 [&_li>:last-child]:mb-0',
+  '[&_h1]:mt-3 [&_h1]:mb-1.5 [&_h1]:text-lg',
+  '[&_h2]:mt-2.5 [&_h2]:mb-1 [&_h2]:text-base',
+  '[&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-sm',
+  '[&_pre]:my-1.5 [&_pre]:rounded-md [&_pre]:text-xs',
+  '[&_hr]:my-2 [&_blockquote]:my-1.5 [&_blockquote]:border-l-2 [&_blockquote]:pl-3',
+  '[&_table]:my-1.5 [&_th]:py-1 [&_td]:py-1'
+)
+
 interface ChatMessageProps {
   message: UIMessage
   className?: string
@@ -20,7 +40,7 @@ export function ChatMessage({ message, className, showThinkingDots }: ChatMessag
         <span className="text-xs font-medium text-muted-foreground">
           {message.role === 'user' ? 'You' : 'Assistant'}
         </span>
-        <div className={cn('text-sm', !isUser && 'prose prose-sm max-w-none dark:prose-invert')}>
+        <div className={cn('text-sm', !isUser && assistantProseClass)}>
           {showThinkingDots && (
             <div className="flex items-center gap-1.5 py-1" aria-label="Thinking">
               <span className="thinking-dot" />
@@ -37,10 +57,11 @@ export function ChatMessage({ message, className, showThinkingDots }: ChatMessag
                   </span>
                 )
               }
+              const normalized = normalizeMarkdownSpacing(part.content)
               return (
-                <div key={idx} className="whitespace-pre-wrap [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                <div key={idx} className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
-                    {part.content}
+                    {normalized}
                   </ReactMarkdown>
                 </div>
               )

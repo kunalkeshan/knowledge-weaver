@@ -41,24 +41,26 @@ export function KnowledgeBaseItem({
   }
 
   return (
-    <div className="rounded-lg border bg-card p-3 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <BookOpen className="h-4 w-4 flex-shrink-0 text-primary" />
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-lg border bg-card p-3 shadow-sm">
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="min-w-0 flex flex-1 items-center gap-2 overflow-hidden">
+          <BookOpen className="h-4 w-4 shrink-0 text-primary" />
           <span className="truncate font-medium text-sm" title={knowledgeBase.name}>
             {knowledgeBase.name}
           </span>
         </div>
-        <KnowledgeBaseStatusBadge status={status} statusMsg={statusMsg} />
+        <div className="shrink-0">
+          <KnowledgeBaseStatusBadge status={status} statusMsg={statusMsg} />
+        </div>
       </div>
 
       {knowledgeBase.description && (
-        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+        <p className="mt-1 min-w-0 overflow-hidden text-xs text-muted-foreground line-clamp-2" title={knowledgeBase.description}>
           {knowledgeBase.description}
         </p>
       )}
 
-      <div className="mt-2">
+      <div className="mt-2 min-w-0 overflow-hidden">
         <KnowledgeBaseDocuments
           kbId={knowledgeBase.id}
           documents={knowledgeBase.documents ?? []}

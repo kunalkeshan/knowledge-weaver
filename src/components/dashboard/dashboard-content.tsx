@@ -1,6 +1,5 @@
 import { AgentGrid } from '@/components/agents/agent-grid'
 import { SidebarLeft } from '@/components/dashboard/sidebar-left'
-import { SidebarRight } from '@/components/dashboard/sidebar-right'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,7 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { Bot, BookOpen, FileStack, MessageSquare, Sparkles } from 'lucide-react'
+import { Bot, BookOpen, FileStack, FolderKanban, MessageSquare, Search, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { RecentChats } from '@/components/dashboard/recent-chats'
 
@@ -81,7 +80,35 @@ export function DashboardContent({ user }: DashboardContentProps) {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Link
+              href="/dashboard/ask"
+              className="group flex flex-col gap-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Search className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">Ask</h2>
+                <p className="text-sm text-muted-foreground">
+                  Ask a question. We route you to the right agent and open the chat.
+                </p>
+              </div>
+            </Link>
+            <Link
+              href="/dashboard/tracking"
+              className="group flex flex-col gap-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <FolderKanban className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">Tracking</h2>
+                <p className="text-sm text-muted-foreground">
+                  Projects, tickets, notes, and policies. Sync to Watson for agents.
+                </p>
+              </div>
+            </Link>
             <Link
               href="/dashboard/knowledge-base"
               className="group flex flex-col gap-3 rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
@@ -144,7 +171,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
           </div>
         </div>
       </SidebarInset>
-      <SidebarRight user={user} />
     </SidebarProvider>
   )
 }

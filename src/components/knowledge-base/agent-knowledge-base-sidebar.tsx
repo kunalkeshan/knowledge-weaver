@@ -28,19 +28,21 @@ export function AgentKnowledgeBaseSidebar({ agentId }: AgentKnowledgeBaseSidebar
   const selectedKb = data?.knowledgeBases.find((kb) => kb.id === selectedKbId)
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-sm font-semibold">Knowledge Bases</h3>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+        <h3 className="truncate text-sm font-semibold">Knowledge Bases</h3>
       </div>
 
-      <ScrollArea className="flex-1">
-        <KnowledgeBaseList
-          agentId={agentId}
-          onAddDocuments={handleAddDocuments}
-        />
+      <ScrollArea className="min-h-0 min-w-0 flex-1 overflow-x-hidden">
+        <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+          <KnowledgeBaseList
+            agentId={agentId}
+            onAddDocuments={handleAddDocuments}
+          />
+        </div>
       </ScrollArea>
 
-      <div className="border-t p-2">
+      <div className="shrink-0 border-t p-2">
         <Button
           variant="outline"
           className="w-full justify-start gap-2"

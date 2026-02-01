@@ -11,6 +11,8 @@ interface ChatPageContentProps {
   agentName?: string
   threadId: string | null
   initialMessages: Array<{ role: 'user' | 'assistant'; content: string }>
+  prefillMessage?: string
+  highRisk?: boolean
 }
 
 export function ChatPageContent({
@@ -18,6 +20,8 @@ export function ChatPageContent({
   agentName,
   threadId: threadIdFromUrl,
   initialMessages,
+  prefillMessage,
+  highRisk,
 }: ChatPageContentProps) {
   const [resolvedThreadId, setResolvedThreadId] = useState<string | null>(null)
   const threadId = threadIdFromUrl ?? resolvedThreadId
@@ -46,6 +50,8 @@ export function ChatPageContent({
           threadId={threadId}
           onThreadIdChange={setResolvedThreadId}
           initialMessages={initialMessages}
+          prefillMessage={prefillMessage}
+          highRisk={highRisk}
         />
       </div>
     </div>

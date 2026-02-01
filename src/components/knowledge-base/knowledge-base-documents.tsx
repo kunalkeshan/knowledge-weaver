@@ -58,12 +58,12 @@ export function KnowledgeBaseDocuments({
   }
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="min-w-0 overflow-hidden">
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-full justify-start gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+          className="h-6 min-w-0 w-full justify-start gap-1 overflow-hidden px-2 text-xs text-muted-foreground hover:text-foreground"
         >
           {isOpen ? (
             <ChevronDown className="h-3 w-3" />
@@ -73,17 +73,17 @@ export function KnowledgeBaseDocuments({
           {documents.length} document{documents.length !== 1 ? 's' : ''}
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-0.5 pl-4">
+      <CollapsibleContent className="min-w-0 space-y-0.5 overflow-hidden pl-4">
         {documents.map((doc) => {
           const id = doc.id ?? doc.name ?? ''
           const displayName = docDisplayName(doc)
           return (
             <div
               key={id}
-              className="group flex items-center gap-1.5 rounded-sm py-0.5 pl-2 pr-1 text-xs hover:bg-muted"
+              className="group flex min-w-0 items-center gap-1.5 overflow-hidden rounded-sm py-0.5 pl-2 pr-1 text-xs hover:bg-muted"
             >
-              <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
-              <span className="flex-1 truncate" title={displayName}>
+              <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1 truncate" title={displayName}>
                 {displayName}
               </span>
               <Button

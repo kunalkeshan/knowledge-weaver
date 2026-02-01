@@ -45,7 +45,7 @@ export function KnowledgeBaseList({ agentId, onAddDocuments }: KnowledgeBaseList
   }
 
   return (
-    <div className="space-y-3 p-2">
+    <div className="w-full min-w-0 max-w-full space-y-3 p-2">
       {data.knowledgeBases.map((kb) => (
         <KnowledgeBaseItem
           key={kb.id}

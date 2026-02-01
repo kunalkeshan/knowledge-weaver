@@ -33,6 +33,15 @@ export interface WatsonRunsRequestBody {
   thread_id?: string
 }
 
+/** A single source/citation from the knowledge base (e.g. document name or reference). */
+export interface WatsonStreamSource {
+  title?: string
+  name?: string
+  id?: string
+  file_name?: string
+  url?: string
+}
+
 export interface WatsonRunsStreamChunk {
   /** Event-based stream: run.started | message.delta | message.completed | run.step.intermediate | ... */
   event?: string
@@ -43,6 +52,11 @@ export interface WatsonRunsStreamChunk {
     text?: string
     message?: string | Array<{ type?: string; text?: string; content?: string }>
     thread_id?: string
+    /** Citation/source entries from knowledge base (format may vary by Watson version) */
+    citations?: Array<Record<string, unknown> | WatsonStreamSource>
+    sources?: Array<Record<string, unknown> | WatsonStreamSource>
+    references?: Array<Record<string, unknown> | WatsonStreamSource>
+    document_ids?: string[]
     [key: string]: unknown
   }
   /** Legacy / alternate: content array or thread_id at top level */
@@ -76,6 +90,9 @@ export interface WatsonKnowledgeBaseDocumentMetadata {
   file_size?: number
   original_file_name?: string
   created_on?: string
+  /** URL source (when set in Watson UI) — citations can link out to this */
+  url?: string
+  source_url?: string
 }
 
 /** Document in a Knowledge Base (from /status API: id + metadata) */
@@ -122,4 +139,22 @@ export interface WatsonAgentFull extends WatsonAgent {
   llm?: string
   created_on?: string
   updated_at?: string
+}
+
+/**
+ * Request body for POST /v1/orchestrate/agents (Create agent — official API).
+ * Schema: name, display_name, description, instructions, tools, llm, style, knowledge_base, hidden, tags.
+ * Optional in full spec: collaborators, supported_apps, glossary, guidelines, structured_output, chat_with_docs, etc.
+ */
+export interface WatsonAgentCreateBody {
+  description: string
+  style?: 'default' | 'react' | 'planner' | 'react_intrinsic'
+  name?: string | null
+  display_name?: string | null
+  instructions?: string | null
+  knowledge_base?: string[] | null
+  tools?: string[] | null
+  llm?: string | null
+  hidden?: boolean
+  tags?: string[] | null
 }

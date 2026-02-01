@@ -8,6 +8,8 @@ export interface ChatThreadSummary {
   createdAt: string
   updatedAt: string
   messageCount?: number
+  /** First user message in the thread (for sidebar title) */
+  firstUserMessage: string | null
 }
 
 export interface ChatMessageRecord {

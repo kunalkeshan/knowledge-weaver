@@ -27,7 +27,7 @@ export default async function ChatPage({
   searchParams,
 }: {
   params: Promise<{ agentId: string }>
-  searchParams: Promise<{ threadId?: string }>
+  searchParams: Promise<{ threadId?: string; message?: string; highRisk?: string }>
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -37,8 +37,10 @@ export default async function ChatPage({
   }
 
   const { agentId } = await params
-  const { threadId: threadIdParam } = await searchParams
+  const { threadId: threadIdParam, message: messageParam, highRisk: highRiskParam } = await searchParams
   const threadId = threadIdParam ?? null
+  const prefillMessage = typeof messageParam === 'string' ? decodeURIComponent(messageParam) : undefined
+  const isHighRisk = highRiskParam === '1'
 
   const [agent, threadData] = await Promise.all([
     getWatsonAgent(agentId).catch(() => null),
@@ -101,6 +103,8 @@ export default async function ChatPage({
             agentName={agentName}
             threadId={threadId}
             initialMessages={initialMessages}
+            prefillMessage={prefillMessage}
+            highRisk={isHighRisk}
           />
         </div>
       </SidebarInset>

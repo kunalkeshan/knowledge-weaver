@@ -1,7 +1,7 @@
 'use client'
 
 import { useChatThreads } from '@/hooks/use-chat-history'
-import { MessageSquare } from 'lucide-react'
+import { FolderKanban, MessageSquare, Search } from 'lucide-react'
 import Link from 'next/link'
 
 import {
@@ -55,6 +55,36 @@ export function SidebarLeft(
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild size="lg">
+              <Link href="/dashboard/ask">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <Search className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Ask</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Route to agent
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild size="lg">
+              <Link href="/dashboard/tracking">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <FolderKanban className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Tracking</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Projects, tickets, notes
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
@@ -79,20 +109,27 @@ export function SidebarLeft(
               </p>
             ) : (
               <SidebarMenu>
-                {threads.slice(0, 20).map((thread) => (
-                  <SidebarMenuItem key={thread.id}>
-                    <SidebarMenuButton asChild tooltip={`${thread.agentName ?? thread.agentId} · ${formatRelativeTime(thread.updatedAt)}`}>
-                      <Link
-                        href={`/dashboard/agents/${thread.agentId}/chat?threadId=${encodeURIComponent(thread.id)}`}
-                      >
-                        <MessageSquare className="size-4 shrink-0" />
-                        <span className="truncate">
-                          {thread.agentName ?? thread.agentId}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {threads.slice(0, 20).map((thread) => {
+                  const label = thread.firstUserMessage?.trim()
+                    ? (thread.firstUserMessage.length > 48
+                        ? thread.firstUserMessage.slice(0, 48).trim() + '…'
+                        : thread.firstUserMessage)
+                    : (thread.agentName ?? thread.agentId)
+                  return (
+                    <SidebarMenuItem key={thread.id}>
+                      <SidebarMenuButton asChild tooltip={`${label} · ${formatRelativeTime(thread.updatedAt)}`}>
+                        <Link
+                          href={`/dashboard/agents/${thread.agentId}/chat?threadId=${encodeURIComponent(thread.id)}`}
+                        >
+                          <MessageSquare className="size-4 shrink-0" />
+                          <span className="truncate">
+                            {label}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             )}
           </SidebarGroupContent>

@@ -3,12 +3,14 @@ import type {
   IAMTokenResponse,
   WatsonAgent,
   WatsonAgentApi,
+  WatsonAgentCreateBody,
   WatsonAgentFull,
   WatsonKnowledgeBase,
   WatsonKnowledgeBaseStatus,
   WatsonKnowledgeBaseStatusResponse,
   WatsonRunsRequestBody,
   WatsonRunsStreamChunk,
+  WatsonStreamSource,
 } from '@/types/watson'
 
 // watsonx Orchestrate SaaS (Profile → Settings → API Details): use this for api.dl.watson-orchestrate.ibm.com
@@ -171,6 +173,71 @@ export async function getWatsonAgent(agentId: string): Promise<WatsonAgent | nul
   return agents.find((a) => a.agent_id === agentId) ?? null
 }
 
+/** Orchestrator (AskOrchestrate) agent ID for the Ask page. Uses env WATSON_ORCHESTRATOR_AGENT_ID if set, else resolves by display name "AskOrchestrate". */
+export async function getOrchestratorAgentId(): Promise<string | null> {
+  if (env.WATSON_ORCHESTRATOR_AGENT_ID) return env.WATSON_ORCHESTRATOR_AGENT_ID
+  if (!isWatsonConfigured()) return null
+  const agents = await listWatsonAgents()
+  const orchestrator = agents.find((a) => (a.name as string) === 'AskOrchestrate')
+  return orchestrator?.agent_id ?? null
+}
+
+/**
+ * Create agent — POST /v1/orchestrate/agents (official API).
+ * Registers a new agent. Applies to: AWS, IBM Cloud, On-premises.
+ * SaaS URL: https://api.{hostname}/instances/{tenant_id}/v1/orchestrate/agents
+ * Security: Bearer token. Headers: Content-Type application/json, Accept application/json.
+ * Request model: name, display_name, description, instructions, tools, llm, style, knowledge_base, hidden, tags (and optional fields per spec).
+ * @see https://developer.ibm.com/apis/catalog/watsonorchestrate--custom-assistants/api/API--watsonorchestrate--agentic-experience#Register_a_new_agent__v1_orchestrate_agents_post
+ */
+export async function createWatsonAgent(params: WatsonAgentCreateBody): Promise<WatsonAgentFull> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/agents`
+  console.log('[Watson] createWatsonAgent: POST', url, { name: params.name, display_name: params.display_name })
+  const headers = await getWatsonAuthHeaders()
+  headers['Content-Type'] = 'application/json'
+  headers['Accept'] = 'application/json'
+  const llm = await getDefaultLlm(params.llm)
+  const body: Record<string, unknown> = {
+    name: params.name ?? null,
+    display_name: params.display_name ?? null,
+    description: params.description,
+    instructions: params.instructions ?? null,
+    tools: params.tools ?? [],
+    llm,
+    style: params.style ?? 'default',
+    knowledge_base: params.knowledge_base ?? [],
+    hidden: params.hidden ?? false,
+    tags: params.tags ?? [],
+  }
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('[Watson] createWatsonAgent failed', res.status, text)
+    throw new Error(`Create agent failed: ${res.status} ${text}`)
+  }
+  const data = (await res.json()) as WatsonAgentApi
+  const full: WatsonAgentFull = {
+    agent_id: data.id,
+    name: data.display_name ?? data.name,
+    description: data.description,
+    knowledge_base: data.knowledge_base ?? [],
+    tenant_id: data.tenant_id,
+    instructions: data.instructions,
+    tools: data.tools,
+    llm: data.llm,
+    created_on: data.created_on,
+    updated_at: data.updated_at,
+  }
+  console.log('[Watson] createWatsonAgent: created', full.agent_id, full.name)
+  return full
+}
+
 /**
  * Get full agent details including knowledge_base array
  */
@@ -270,6 +337,74 @@ export async function listWatsonKnowledgeBases(): Promise<WatsonKnowledgeBase[]>
   return Array.isArray(data) ? data : data.knowledge_bases ?? []
 }
 
+/** Model from GET /v1/orchestrate/models (or list-models API) */
+export interface WatsonModel {
+  id: string
+  label?: string
+  type?: string
+  [key: string]: unknown
+}
+
+/**
+ * List available LLM models for the instance (used to pick default llm when creating agents).
+ * @see https://developer.watson-orchestrate.ibm.com/apis/models/list-models
+ */
+export async function listWatsonModels(): Promise<WatsonModel[]> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const headers = await getWatsonAuthHeaders()
+  const urlsToTry = [
+    `${baseUrl}/v1/orchestrate/models`,
+    `${baseUrl}/api/v1/models/list`,
+  ]
+  for (const url of urlsToTry) {
+    console.log('[Watson] listWatsonModels: GET', url)
+    const res = await fetch(url, { headers })
+    if (!res.ok) {
+      console.log('[Watson] listWatsonModels:', res.status, url)
+      continue
+    }
+    const data = (await res.json()) as WatsonModel[] | { resources?: WatsonModel[] }
+    const list = Array.isArray(data) ? data : data.resources ?? []
+    console.log('[Watson] listWatsonModels: got', list.length, 'model(s)', list.slice(0, 3).map((m) => m.id))
+    return list
+  }
+  console.error('[Watson] listWatsonModels: all paths failed')
+  throw new Error('List models failed. Tried /v1/orchestrate/models and /api/v1/models/list.')
+}
+
+let cachedDefaultLlm: string | null = null
+let cachedModelsEmpty = false
+
+/** Fallback when list-models returns empty (e.g. Watson UI default: GPT-OSS 120B via Groq). Override with WATSON_AGENT_LLM. */
+const FALLBACK_LLM_ID = 'groq/openai/gpt-oss-120b'
+
+const NO_LLM_MESSAGE =
+  'No LLM models found and fallback failed. Set WATSON_AGENT_LLM in .env to a model ID from Watson UI → Profile → AI Model (e.g. groq/openai/gpt-oss-120b).'
+
+/**
+ * Get a default LLM id for agent creation: params.llm ?? env.WATSON_AGENT_LLM ?? first model from list-models API ?? fallback (groq/openai/gpt-oss-120b).
+ */
+async function getDefaultLlm(paramsLlm: string | null | undefined): Promise<string> {
+  if (paramsLlm != null && paramsLlm !== '') return paramsLlm
+  if (env.WATSON_AGENT_LLM != null && env.WATSON_AGENT_LLM !== '') return env.WATSON_AGENT_LLM
+  if (cachedDefaultLlm) return cachedDefaultLlm
+  if (cachedModelsEmpty) {
+    console.log('[Watson] using fallback llm:', FALLBACK_LLM_ID)
+    return FALLBACK_LLM_ID
+  }
+  const models = await listWatsonModels()
+  const first = models[0]
+  if (first?.id) {
+    cachedDefaultLlm = first.id
+    console.log('[Watson] using default llm from API:', first.id)
+    return first.id
+  }
+  cachedModelsEmpty = true
+  console.log('[Watson] list-models returned 0; using fallback llm:', FALLBACK_LLM_ID)
+  return FALLBACK_LLM_ID
+}
+
 /**
  * Get single knowledge base details
  */
@@ -328,6 +463,39 @@ export async function getWatsonKnowledgeBaseWithDocuments(
       status_msg: status.built_in_index_status_msg,
     }),
   }
+}
+
+/** Resolved display info for a document (from /status API, same as right sidebar). */
+export interface DocumentDisplayInfo {
+  displayName: string
+  url?: string
+}
+
+/**
+ * Build a map of document ID → display name (and optional URL) for all documents
+ * in an agent's linked knowledge bases. Uses the same /status API as the right sidebar,
+ * so names match what users see in Watson UI (e.g. file names like sync-db-...-IT-Support.txt).
+ * If you add "URL source" to documents in Watson, citations can show as clickable links.
+ */
+export async function getAgentDocumentDisplayMap(
+  kbIds: string[]
+): Promise<Map<string, DocumentDisplayInfo>> {
+  const map = new Map<string, DocumentDisplayInfo>()
+  await Promise.all(
+    kbIds.map(async (kbId) => {
+      const status = await getWatsonKnowledgeBaseStatus(kbId).catch(() => null)
+      if (!status?.documents) return
+      for (const doc of status.documents) {
+        const id = doc.id
+        if (!id) continue
+        const displayName =
+          doc.metadata?.original_file_name ?? doc.name ?? id
+        const url = doc.metadata?.url ?? doc.metadata?.source_url
+        map.set(id, { displayName, url })
+      }
+    })
+  )
+  return map
 }
 
 /** File-like value: either a Web API File or buffer + metadata (for Node when re-forwarding uploads). */
@@ -397,7 +565,12 @@ export async function createWatsonKnowledgeBase(
           'If this persists, the Knowledge Base create API may be unavailable for your Watson Orchestrate instance (e.g. entitlement or region). Try creating a knowledge base in the IBM watsonx Orchestrate UI, or contact IBM support.'
       )
     }
-    kb = (await resDoc.json()) as WatsonKnowledgeBase
+    const docJson = (await resDoc.json()) as Record<string, unknown>
+    // Multipart API may return { knowledge_base: { id, name, ... } } or { id, name, ... }
+    kb = (docJson.knowledge_base as WatsonKnowledgeBase) ?? (docJson as WatsonKnowledgeBase)
+    if (!kb?.id && typeof (docJson as { id?: string }).id === 'string') {
+      kb = { ...kb, id: (docJson as { id: string }).id } as WatsonKnowledgeBase
+    }
     console.log('[Watson] createWatsonKnowledgeBase: created via multipart, kbId=%s', kb?.id)
   }
 
@@ -548,13 +721,48 @@ export async function deleteKnowledgeBaseDocuments(kbId: string, documentNames: 
   }
 }
 
+/** Normalize stream chunk data into a list of source references for citations. */
+function extractSourcesFromChunkData(data: WatsonRunsStreamChunk['data']): WatsonStreamSource[] {
+  if (!data || typeof data !== 'object') return []
+  const out: WatsonStreamSource[] = []
+  const push = (arr: unknown[] | undefined, keyTitle: string, keyName: string) => {
+    if (!Array.isArray(arr)) return
+    for (const item of arr) {
+      if (item && typeof item === 'object') {
+        const o = item as Record<string, unknown>
+        out.push({
+          title: (o.title ?? o[keyTitle]) as string | undefined,
+          name: (o.name ?? o[keyName]) as string | undefined,
+          id: o.id as string | undefined,
+          file_name: o.file_name as string | undefined,
+          url: o.url as string | undefined,
+        })
+      }
+    }
+  }
+  push(data.citations as unknown[] | undefined, 'title', 'name')
+  push(data.sources as unknown[] | undefined, 'title', 'name')
+  push(data.references as unknown[] | undefined, 'title', 'name')
+  const docIds = data.document_ids
+  if (Array.isArray(docIds)) {
+    for (const id of docIds) {
+      if (typeof id === 'string') out.push({ id })
+    }
+  }
+  return out
+}
+
 /**
  * Stream a chat run from Watson Orchestrate and yield TanStack AI–compatible SSE content chunks.
- * Yields { type: 'content', content: string } for each text delta and { type: 'done' } at end.
+ * Yields { type: 'content', content: string } for text, { type: 'sources', sources } when KB citations are present, and { type: 'done' } at end.
  */
 export async function* streamWatsonChat(
   body: WatsonRunsRequestBody,
-): AsyncGenerator<{ type: 'content'; content: string } | { type: 'done'; threadId?: string }> {
+): AsyncGenerator<
+  | { type: 'content'; content: string }
+  | { type: 'sources'; sources: WatsonStreamSource[] }
+  | { type: 'done'; threadId?: string }
+> {
   const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
   if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
   const url = `${baseUrl}/v1/orchestrate/runs?stream=true&stream_timeout=120000&multiple_content=true`
@@ -659,6 +867,13 @@ export async function* streamWatsonChat(
             } else if (event === 'message.completed' && data) {
               const content = extractText(data.content) || extractText(data.text)
               if (content) yield { type: 'content', content }
+              const sources = extractSourcesFromChunkData(data)
+              if (sources.length > 0) yield { type: 'sources', sources }
+            }
+            // Also check run.step.completed for tool/KB citations
+            if ((event === 'run.step.completed' || event === 'run.completed') && data) {
+              const sources = extractSourcesFromChunkData(data)
+              if (sources.length > 0) yield { type: 'sources', sources }
             }
             // run.step.delta, run.step.intermediate, run.step.thinking: not yielded as content
 

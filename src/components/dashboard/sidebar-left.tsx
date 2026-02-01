@@ -1,10 +1,17 @@
 'use client'
 
-import { useChatThreads } from '@/hooks/use-chat-history'
-import { FolderKanban, MessageSquare, Search } from 'lucide-react'
+import { useChatThreads, useDeleteChatThread } from '@/hooks/use-chat-history'
+import { FolderKanban, Loader2, MessageSquare, MoreHorizontal, Search, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import { GitHubIcon } from '@/components/icons/social/github-icon'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
   SidebarContent,
@@ -14,10 +21,14 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar'
+import { Button } from '@/components/ui/button'
+import type { ChatThreadSummary } from '@/hooks/use-chat-history'
 
 function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr)
@@ -36,7 +47,27 @@ function formatRelativeTime(dateStr: string): string {
 export function SidebarLeft(
   props: React.ComponentProps<typeof Sidebar>
 ) {
-  const { data: threads, isLoading, error } = useChatThreads()
+  const { data: threads, isLoading, isError, isFetching, error, refetch } = useChatThreads()
+  const deleteMutation = useDeleteChatThread()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { isMobile } = useSidebar()
+
+  const handleDeleteThread = (thread: ChatThreadSummary) => {
+    deleteMutation.mutate(thread.id, {
+      onSuccess: () => {
+        const currentThreadId = searchParams.get('threadId')
+        const isViewingDeletedThread =
+          pathname?.includes('/agents/') &&
+          pathname?.includes('/chat') &&
+          currentThreadId === thread.id
+        if (isViewingDeletedThread) {
+          router.push(`/dashboard/agents/${thread.agentId}/chat`)
+        }
+      },
+    })
+  }
 
   return (
     <Sidebar className="border-r-0" {...props}>
@@ -89,51 +120,98 @@ export function SidebarLeft(
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
+      <SidebarContent className="flex min-h-0 flex-col overflow-hidden">
+        <SidebarGroup className="flex min-h-0 flex-1 flex-col">
           <SidebarGroupLabel>Recent chats</SidebarGroupLabel>
-          <SidebarGroupContent>
-            {isLoading ? (
-              <SidebarMenu>
-                {[1, 2, 3, 4].map((i) => (
-                  <SidebarMenuItem key={i}>
-                    <div className="h-10 animate-pulse rounded-md bg-muted/50" />
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            ) : error ? (
-              <p className="px-2 py-2 text-xs text-muted-foreground">
-                Could not load chats.
-              </p>
-            ) : !threads?.length ? (
-              <p className="px-2 py-2 text-xs text-muted-foreground">
-                No conversations yet. Start a chat from the dashboard.
-              </p>
-            ) : (
-              <SidebarMenu>
-                {threads.slice(0, 20).map((thread) => {
-                  const label = thread.firstUserMessage?.trim()
-                    ? (thread.firstUserMessage.length > 48
-                      ? thread.firstUserMessage.slice(0, 48).trim() + '…'
-                      : thread.firstUserMessage)
-                    : (thread.agentName ?? thread.agentId)
-                  return (
-                    <SidebarMenuItem key={thread.id}>
-                      <SidebarMenuButton asChild tooltip={`${label} · ${formatRelativeTime(thread.updatedAt)}`}>
-                        <Link
-                          href={`/dashboard/agents/${thread.agentId}/chat?threadId=${encodeURIComponent(thread.id)}`}
-                        >
-                          <MessageSquare className="size-4 shrink-0" />
-                          <span className="truncate">
-                            {label}
-                          </span>
-                        </Link>
-                      </SidebarMenuButton>
+          <SidebarGroupContent className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {isLoading ? (
+                <SidebarMenu>
+                  {[1, 2, 3, 4].map((i) => (
+                    <SidebarMenuItem key={i}>
+                      <div className="h-10 animate-pulse rounded-md bg-muted/50" />
                     </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            )}
+                  ))}
+                </SidebarMenu>
+              ) : isError ? (
+                <div className="flex flex-col gap-2 px-2 py-2">
+                  <p className="text-xs text-muted-foreground">
+                    {error instanceof Error ? error.message : 'Could not load chats.'}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-fit text-xs"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                  >
+                    {isFetching ? 'Retrying…' : 'Retry'}
+                  </Button>
+                </div>
+              ) : !threads?.length ? (
+                <p className="px-2 py-2 text-xs text-muted-foreground">
+                  No conversations yet. Start a chat from the dashboard.
+                </p>
+              ) : (
+                <SidebarMenu>
+                  {threads.slice(0, 20).map((thread) => {
+                    const label = thread.firstUserMessage?.trim()
+                      ? (thread.firstUserMessage.length > 48
+                        ? thread.firstUserMessage.slice(0, 48).trim() + '…'
+                        : thread.firstUserMessage)
+                      : (thread.agentName ?? thread.agentId)
+                    return (
+                      <SidebarMenuItem key={thread.id}>
+                        <SidebarMenuButton asChild tooltip={`${label} · ${formatRelativeTime(thread.updatedAt)}`}>
+                          <Link
+                            href={`/dashboard/agents/${thread.agentId}/chat?threadId=${encodeURIComponent(thread.id)}`}
+                          >
+                            <MessageSquare className="size-4 shrink-0" />
+                            <span className="truncate">
+                              {label}
+                            </span>
+                          </Link>
+                        </SidebarMenuButton>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <SidebarMenuAction
+                              showOnHover
+                              onClick={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              aria-label="Chat options"
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </SidebarMenuAction>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            className="w-56 rounded-lg"
+                            side={isMobile ? 'bottom' : 'right'}
+                            align={isMobile ? 'end' : 'start'}
+                          >
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              disabled={deleteMutation.isPending}
+                              onClick={() => handleDeleteThread(thread)}
+                            >
+                              {deleteMutation.isPending && deleteMutation.variables === thread.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="size-4" />
+                              )}
+                              <span>
+                                {deleteMutation.isPending && deleteMutation.variables === thread.id
+                                  ? 'Deleting…'
+                                  : 'Delete'}
+                              </span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              )}
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

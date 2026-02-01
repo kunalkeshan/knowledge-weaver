@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 export interface ChatThreadSummary {
   id: string
@@ -35,6 +35,28 @@ export function useChatThreads(agentId?: string) {
   return useQuery({
     queryKey: ['chat', 'threads', agentId ?? 'all'],
     queryFn: () => fetchThreads(agentId),
+  })
+}
+
+async function deleteThread(threadId: string): Promise<void> {
+  const res = await fetch(`/api/chat/threads/${encodeURIComponent(threadId)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error((data as { error?: string }).error ?? `Delete failed: ${res.status}`)
+  }
+}
+
+export function useDeleteChatThread() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteThread,
+    onSuccess: (_data, threadId) => {
+      queryClient.invalidateQueries({ queryKey: ['chat', 'threads'] })
+      queryClient.invalidateQueries({ queryKey: ['chat', 'thread', threadId] })
+    },
   })
 }
 

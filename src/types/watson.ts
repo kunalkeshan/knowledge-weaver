@@ -59,3 +59,45 @@ export interface IAMTokenResponse {
   expires_in: number
   expiration?: number
 }
+
+/** Knowledge Base status from Watson Orchestrate */
+export type WatsonKnowledgeBaseStatus = 'ready' | 'not_ready' | 'processing' | 'error'
+
+/** Vector index info from Knowledge Base */
+export interface WatsonVectorIndex {
+  status: WatsonKnowledgeBaseStatus
+  status_msg?: string
+  document_count?: number
+  embedding_model?: string
+}
+
+/** Document in a Knowledge Base */
+export interface WatsonKnowledgeBaseDocument {
+  name: string
+  size?: number
+  type?: string
+  status?: WatsonKnowledgeBaseStatus
+}
+
+/** Knowledge Base from Watson Orchestrate */
+export interface WatsonKnowledgeBase {
+  id: string
+  tenant_id: string
+  name: string
+  description?: string
+  vector_index?: WatsonVectorIndex
+  documents?: WatsonKnowledgeBaseDocument[]
+  created_on?: string
+  updated_at?: string
+}
+
+/** Full agent schema with knowledge_base array */
+export interface WatsonAgentFull extends WatsonAgent {
+  knowledge_base: string[]
+  tenant_id?: string
+  instructions?: string
+  tools?: unknown[]
+  llm?: string
+  created_on?: string
+  updated_at?: string
+}

@@ -104,7 +104,7 @@ export default async function ChatPage({
           />
         </div>
       </SidebarInset>
-      <SidebarRight user={session.user} />
+      <SidebarRight user={session.user} agentId={agentId} />
     </SidebarProvider>
   )
 }

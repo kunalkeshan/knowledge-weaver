@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Calendars } from '@/components/dashboard/calendars'
 import { DatePicker } from '@/components/dashboard/date-picker'
 import { NavUser } from '@/components/dashboard/nav-user'
+import { AgentKnowledgeBaseSidebar } from '@/components/knowledge-base'
 import {
   Sidebar,
   SidebarContent,
@@ -36,9 +37,11 @@ interface SidebarRightProps extends React.ComponentProps<typeof Sidebar> {
     email: string
     image?: string | null
   }
+  /** When provided, shows knowledge base management instead of calendar */
+  agentId?: string
 }
 
-export function SidebarRight({ user, ...props }: SidebarRightProps) {
+export function SidebarRight({ user, agentId, ...props }: SidebarRightProps) {
   return (
     <Sidebar
       collapsible="none"
@@ -48,21 +51,29 @@ export function SidebarRight({ user, ...props }: SidebarRightProps) {
       <SidebarHeader className="h-16 border-b border-sidebar-border">
         <NavUser user={user} />
       </SidebarHeader>
-      <SidebarContent>
-        <DatePicker />
-        <SidebarSeparator className="mx-0" />
-        <Calendars calendars={calendars} />
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Plus />
-              <span>New Calendar</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+      {agentId ? (
+        <SidebarContent className="p-0">
+          <AgentKnowledgeBaseSidebar agentId={agentId} />
+        </SidebarContent>
+      ) : (
+        <>
+          <SidebarContent>
+            <DatePicker />
+            <SidebarSeparator className="mx-0" />
+            <Calendars calendars={calendars} />
+          </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <Plus />
+                  <span>New Calendar</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </>
+      )}
     </Sidebar>
   )
 }

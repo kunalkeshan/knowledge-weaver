@@ -3,6 +3,9 @@ import type {
   IAMTokenResponse,
   WatsonAgent,
   WatsonAgentApi,
+  WatsonAgentFull,
+  WatsonKnowledgeBase,
+  WatsonKnowledgeBaseStatus,
   WatsonRunsRequestBody,
   WatsonRunsStreamChunk,
 } from '@/types/watson'
@@ -165,6 +168,360 @@ export async function listWatsonAgents(): Promise<WatsonAgent[]> {
 export async function getWatsonAgent(agentId: string): Promise<WatsonAgent | null> {
   const agents = await listWatsonAgents()
   return agents.find((a) => a.agent_id === agentId) ?? null
+}
+
+/**
+ * Get full agent details including knowledge_base array
+ */
+export async function getWatsonAgentFull(agentId: string): Promise<WatsonAgentFull | null> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/agents/${agentId}`
+  console.log('[Watson] getWatsonAgentFull: GET', url)
+  const headers = await getWatsonAuthHeaders()
+  const res = await fetch(url, { headers })
+  if (!res.ok) {
+    if (res.status === 404) return null
+    const text = await res.text()
+    console.error('[Watson] getWatsonAgentFull failed', res.status, text)
+    throw new Error(`Get agent failed: ${res.status} ${text}`)
+  }
+  const data = (await res.json()) as WatsonAgentApi
+  return {
+    agent_id: data.id,
+    name: data.display_name ?? data.name,
+    description: data.description,
+    knowledge_base: data.knowledge_base ?? [],
+    tenant_id: data.tenant_id,
+    instructions: data.instructions,
+    tools: data.tools,
+    llm: data.llm,
+    created_on: data.created_on,
+    updated_at: data.updated_at,
+  }
+}
+
+/**
+ * Update agent (e.g., to modify knowledge_base array)
+ */
+export async function updateWatsonAgent(
+  agentId: string,
+  data: { knowledge_base?: string[]; name?: string; description?: string; instructions?: string }
+): Promise<WatsonAgentFull> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/agents/${agentId}`
+  console.log('[Watson] updateWatsonAgent: PATCH', url, data)
+  const headers = await getWatsonAuthHeaders()
+  headers['Content-Type'] = 'application/json'
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('[Watson] updateWatsonAgent failed', res.status, text)
+    throw new Error(`Update agent failed: ${res.status} ${text}`)
+  }
+  const text = await res.text()
+  if (text && text.trim()) {
+    try {
+      const result = JSON.parse(text) as WatsonAgentApi
+      return {
+        agent_id: result.id,
+        name: result.display_name ?? result.name,
+        description: result.description,
+        knowledge_base: result.knowledge_base ?? [],
+        tenant_id: result.tenant_id,
+        instructions: result.instructions,
+        tools: result.tools,
+        llm: result.llm,
+        created_on: result.created_on,
+        updated_at: result.updated_at,
+      }
+    } catch {
+      // fall through to re-fetch
+    }
+  }
+  // PATCH succeeded but body empty or not JSON (e.g. 204 No Content) — re-fetch agent
+  const full = await getWatsonAgentFull(agentId)
+  if (!full) throw new Error(`Update agent succeeded but re-fetch failed for agent ${agentId}`)
+  return full
+}
+
+/**
+ * List all knowledge bases
+ */
+export async function listWatsonKnowledgeBases(): Promise<WatsonKnowledgeBase[]> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/knowledge-bases`
+  console.log('[Watson] listWatsonKnowledgeBases: GET', url)
+  const headers = await getWatsonAuthHeaders()
+  const res = await fetch(url, { headers })
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('[Watson] listWatsonKnowledgeBases failed', res.status, text)
+    throw new Error(`List knowledge bases failed: ${res.status} ${text}`)
+  }
+  const data = (await res.json()) as WatsonKnowledgeBase[] | { knowledge_bases?: WatsonKnowledgeBase[] }
+  return Array.isArray(data) ? data : data.knowledge_bases ?? []
+}
+
+/**
+ * Get single knowledge base details
+ */
+export async function getWatsonKnowledgeBase(kbId: string): Promise<WatsonKnowledgeBase | null> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}`
+  console.log('[Watson] getWatsonKnowledgeBase: GET', url)
+  const headers = await getWatsonAuthHeaders()
+  const res = await fetch(url, { headers })
+  if (!res.ok) {
+    if (res.status === 404) return null
+    const text = await res.text()
+    console.error('[Watson] getWatsonKnowledgeBase failed', res.status, text)
+    throw new Error(`Get knowledge base failed: ${res.status} ${text}`)
+  }
+  return (await res.json()) as WatsonKnowledgeBase
+}
+
+/**
+ * Get knowledge base status
+ */
+export async function getWatsonKnowledgeBaseStatus(
+  kbId: string
+): Promise<{ status: WatsonKnowledgeBaseStatus; status_msg?: string } | null> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}/status`
+  console.log('[Watson] getWatsonKnowledgeBaseStatus: GET', url)
+  const headers = await getWatsonAuthHeaders()
+  const res = await fetch(url, { headers })
+  if (!res.ok) {
+    if (res.status === 404) return null
+    const text = await res.text()
+    console.error('[Watson] getWatsonKnowledgeBaseStatus failed', res.status, text)
+    throw new Error(`Get knowledge base status failed: ${res.status} ${text}`)
+  }
+  return (await res.json()) as { status: WatsonKnowledgeBaseStatus; status_msg?: string }
+}
+
+/** File-like value: either a Web API File or buffer + metadata (for Node when re-forwarding uploads). */
+export type FileLike = File | { buffer: ArrayBuffer; name: string; type: string }
+
+/**
+ * Create knowledge base. Tries (1) POST JSON to /knowledge-bases, then (2) POST multipart to /knowledge-bases/documents.
+ * Then adds documents via PUT if any.
+ * @see https://developer.watson-orchestrate.ibm.com/apis/knowledge-bases/create-a-knowledge-base-by-uploading-documents-or-providing-a-external-vector-index
+ */
+export async function createWatsonKnowledgeBase(
+  name: string,
+  files: FileLike[],
+  description?: string
+): Promise<WatsonKnowledgeBase> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const headers = await getWatsonAuthHeaders()
+
+  const knowledgeBasePayload = { name, ...(description ? { description } : {}) }
+  let kb: WatsonKnowledgeBase | null = null
+
+  // Try 1: POST JSON to /knowledge-bases (some deployments support create without /documents)
+  const urlJson = `${baseUrl}/v1/orchestrate/knowledge-bases`
+  console.log('[Watson] createWatsonKnowledgeBase: try POST (JSON)', urlJson, { name })
+  const resJson = await fetch(urlJson, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: headers['Authorization'],
+      ...(headers['IAM-API_KEY'] ? { 'IAM-API_KEY': headers['IAM-API_KEY'] } : {}),
+    },
+    body: JSON.stringify(knowledgeBasePayload),
+  })
+  if (resJson.ok) {
+    kb = (await resJson.json()) as WatsonKnowledgeBase
+    console.log('[Watson] createWatsonKnowledgeBase: created via JSON, kbId=%s', kb?.id)
+  } else {
+    const textJson = await resJson.text()
+    console.log('[Watson] createWatsonKnowledgeBase: JSON create returned', resJson.status, textJson?.slice(0, 200))
+
+    // Try 2: POST multipart to /knowledge-bases/documents (empty KB)
+    const urlDoc = `${baseUrl}/v1/orchestrate/knowledge-bases/documents`
+    const formData = new FormData()
+    formData.append('knowledge_base', JSON.stringify(knowledgeBasePayload))
+    console.log('[Watson] createWatsonKnowledgeBase: try POST (multipart empty)', urlDoc, { name })
+    const resDoc = await fetch(urlDoc, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: headers['Authorization'],
+        ...(headers['IAM-API_KEY'] ? { 'IAM-API_KEY': headers['IAM-API_KEY'] } : {}),
+      },
+      body: formData,
+    })
+    if (!resDoc.ok) {
+      const textDoc = await resDoc.text()
+      console.error('[Watson] createWatsonKnowledgeBase failed:', {
+        status: resDoc.status,
+        responseBody: textDoc,
+        url: urlDoc,
+        name,
+      })
+      throw new Error(
+        `Create knowledge base failed: ${resDoc.status} ${textDoc}. ` +
+          'If this persists, the Knowledge Base create API may be unavailable for your Watson Orchestrate instance (e.g. entitlement or region). Try creating a knowledge base in the IBM watsonx Orchestrate UI, or contact IBM support.'
+      )
+    }
+    kb = (await resDoc.json()) as WatsonKnowledgeBase
+    console.log('[Watson] createWatsonKnowledgeBase: created via multipart, kbId=%s', kb?.id)
+  }
+
+  if (!kb?.id) throw new Error('Create knowledge base did not return an ID')
+
+  // Add documents if any
+  if (files.length > 0) {
+    await addDocumentsToKnowledgeBase(kb.id, files)
+  }
+  return kb
+}
+
+/**
+ * Add documents to existing knowledge base (supports File or buffer+name+type for Node).
+ * Tries PATCH first (works on many Watson cloud instances); if that fails, retries with PUT.
+ * Watson may return 400 for unsupported types (e.g. text/markdown) or 500 for "ongoing update" / server errors.
+ * Logs file names and MIME types to help debug "Unsupported file type" or "Failed to add documents" errors.
+ */
+export async function addDocumentsToKnowledgeBase(
+  kbId: string,
+  files: FileLike[]
+): Promise<WatsonKnowledgeBase> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}/documents`
+  const fileInfos = files.map((f) =>
+    f instanceof File
+      ? { name: f.name, type: f.type, size: f.size }
+      : { name: f.name, type: f.type, size: (f.buffer as ArrayBuffer).byteLength }
+  )
+  const headers = await getWatsonAuthHeaders()
+  const authHeaders = {
+    Accept: 'application/json',
+    Authorization: headers['Authorization'],
+    ...(headers['IAM-API_KEY'] ? { 'IAM-API_KEY': headers['IAM-API_KEY'] } : {}),
+  }
+
+  function buildFormDataFilesOnly(): FormData {
+    const formData = new FormData()
+    for (const file of files) {
+      if (file instanceof File) {
+        formData.append('files', file, file.name || 'document')
+      } else {
+        const blob = new Blob([file.buffer], { type: file.type || 'application/octet-stream' })
+        formData.append('files', blob, file.name || 'document')
+      }
+    }
+    return formData
+  }
+
+  function buildFormDataPATCH(): FormData {
+    const formData = new FormData()
+    formData.append('knowledge_base', JSON.stringify({ id: kbId }))
+    for (const file of files) {
+      if (file instanceof File) {
+        formData.append('files', file, file.name || 'document')
+      } else {
+        const blob = new Blob([file.buffer], { type: file.type || 'application/octet-stream' })
+        formData.append('files', blob, file.name || 'document')
+      }
+    }
+    return formData
+  }
+
+  const logFailure = (method: string, status: number, text: string) => {
+    console.error('[Watson] addDocumentsToKnowledgeBase failed:', {
+      method,
+      status,
+      body: text,
+      kbId,
+      fileCount: files.length,
+      fileNames: fileInfos.map((f) => f.name),
+      fileTypes: fileInfos.map((f) => f.type),
+    })
+  }
+
+  const makeHelpfulMessage = (status: number, text: string) =>
+    `Add documents failed: ${status} ${text.includes('detail') ? text : status}. ` +
+    'Watson may reject some file types or fail on large/PDF files. Try a smaller or text-based file, or create/upload via the IBM watsonx Orchestrate UI; if it persists, contact IBM support.'
+
+  // Try PATCH first (succeeds on many Watson cloud instances where PUT returns 500)
+  console.log('[Watson] addDocumentsToKnowledgeBase: PATCH', url, { fileCount: files.length, files: fileInfos })
+  let res = await fetch(url, {
+    method: 'PATCH',
+    headers: authHeaders,
+    body: buildFormDataPATCH(),
+  })
+  if (res.ok) return (await res.json()) as WatsonKnowledgeBase
+  const textPatch = await res.text()
+  logFailure('PATCH', res.status, textPatch)
+  let lastStatus = res.status
+  let lastText = textPatch
+
+  // Fallback: PUT (Ingest Additional Documents)
+  console.log('[Watson] addDocumentsToKnowledgeBase: retry PUT', url)
+  res = await fetch(url, {
+    method: 'PUT',
+    headers: authHeaders,
+    body: buildFormDataFilesOnly(),
+  })
+  if (res.ok) return (await res.json()) as WatsonKnowledgeBase
+  lastStatus = res.status
+  lastText = await res.text()
+  logFailure('PUT', lastStatus, lastText)
+
+  throw new Error(makeHelpfulMessage(lastStatus, lastText))
+}
+
+/**
+ * Delete knowledge base
+ */
+export async function deleteWatsonKnowledgeBase(kbId: string): Promise<void> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}`
+  console.log('[Watson] deleteWatsonKnowledgeBase: DELETE', url)
+  const headers = await getWatsonAuthHeaders()
+  const res = await fetch(url, { method: 'DELETE', headers })
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('[Watson] deleteWatsonKnowledgeBase failed', res.status, text)
+    throw new Error(`Delete knowledge base failed: ${res.status} ${text}`)
+  }
+}
+
+/**
+ * Delete specific documents from knowledge base
+ */
+export async function deleteKnowledgeBaseDocuments(kbId: string, documentNames: string[]): Promise<void> {
+  const baseUrl = env.WATSON_INSTANCE_API_URL?.replace(/\/$/, '')
+  if (!baseUrl) throw new Error('WATSON_INSTANCE_API_URL is not set')
+  const url = `${baseUrl}/v1/orchestrate/knowledge-bases/${kbId}/documents`
+  console.log('[Watson] deleteKnowledgeBaseDocuments: DELETE', url, { documentNames })
+  const headers = await getWatsonAuthHeaders()
+  headers['Content-Type'] = 'application/json'
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers,
+    body: JSON.stringify({ documents: documentNames }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('[Watson] deleteKnowledgeBaseDocuments failed', res.status, text)
+    throw new Error(`Delete documents failed: ${res.status} ${text}`)
+  }
 }
 
 /**
